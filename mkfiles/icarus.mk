@@ -18,7 +18,7 @@ PYBFMS_VPI_LIB := $(shell $(PACKAGES_DIR)/python/bin/pybfms lib)
 COCOTB_PREFIX := $(shell $(PACKAGES_DIR)/python/bin/cocotb-config --prefix)
 TIMEOUT?=1ms
 
-DEFINES += IVERILOG HAVE_HDL_CLOCKGEN
+DEFINES += IVERILOG HAVE_HDL_CLOCKGEN NEED_TIMESCALE
 
 ifeq (ms,$(findstring ms,$(TIMEOUT)))
   timeout=$(shell expr $(subst ms,,$(TIMEOUT)) '*' 1000000)
