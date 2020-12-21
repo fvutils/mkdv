@@ -2,7 +2,7 @@
 import os
 from setuptools import setup, find_namespace_packages
 
-version=0.0.1
+version="0.0.1"
 
 setup(
   name="pymkdv",
