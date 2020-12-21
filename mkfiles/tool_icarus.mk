@@ -1,5 +1,5 @@
 #****************************************************************************
-#* icarus.mk
+#* tool_icarus.mk
 #*
 #* Simulator support for Icarus Verilog
 #*
@@ -54,12 +54,12 @@ VPI_LIBS += $(COCOTB_PREFIX)/cocotb/libs/libcocotbvpi_icarus.vpl
 
 else # Rules
 
-build : $(SIMV)
+build-icarus : $(SIMV)
 
 $(SIMV) : $(SRCS) pybfms_gen.v
 	iverilog -o $@ $(IVERILOG_OPTIONS) $(SRCS) pybfms_gen.v 
 
-run : $(SIMV)
+run-icarus : $(SIMV)
 	@echo "PYTHONPATH=$(PYTHONPATH)"
 	vvp $(VVP_OPTIONS) $(SIMV) $(SIMV_ARGS)
 	

@@ -1,0 +1,6 @@
+
+
+# Defines
+
+- NEED_TIMESCALE
+- HAVE_HDL_CLOCKGEN

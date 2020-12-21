@@ -34,6 +34,7 @@ VLSIM_OPTIONS += --top-module $(TOP_MODULE)
 
 VLSIM_OPTIONS += $(foreach inc,$(INCDIRS),+incdir+$(inc))
 VLSIM_OPTIONS += $(foreach def,$(DEFINES),+define+$(def))
+VLSIM_OPTIONS += $(foreach spec,$(VLSIM_CLKSPEC), -clkspec $(spec))
 SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
 
 DPI_LIBS += $(PYBFMS_DPI_LIB)
@@ -44,7 +45,7 @@ else # Rules
 build : $(SIMV)
 
 $(SIMV) : $(SRCS) pybfms_gen.sv pybfms_gen.c
-	$(VLSIM) -o $@ $(VLSIM_CLKSPEC) $(VLSIM_OPTIONS) $(SRCS) pybfms_gen.sv pybfms_gen.c \
+	$(VLSIM) -o $@ $(VLSIM_OPTIONS) $(SRCS) pybfms_gen.sv pybfms_gen.c \
 		$(foreach l,$(DPI_LIBS),$(l))
 
 run : $(SIMV)
