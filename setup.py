@@ -22,6 +22,7 @@ setup(
   },
   setup_requires=[
     'setuptools_scm',
+    'wheel',
     'pyyaml'
   ],
   install_requires=[
