@@ -10,6 +10,8 @@ TOOL ?= unknown
 #SIMTYPE ?= functional
 TIMEOUT ?= 1ms
 
+MKDV_MKFILES_PATH += $(DV_MK_MKFILES_DIR)
+
 
 # PYBFMS_MODULES += wishbone_bfms
 # VLSIM_CLKSPEC += -clkspec clk=10ns
@@ -21,7 +23,8 @@ export PATH
 
 INCDIRS += $(DV_MK_MKFILES_DIR)/../include
 
-include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
+#include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
+include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/tool_*.mk))
 
 else # Rules
 
@@ -38,6 +41,7 @@ help-all :
 	@echo "dv-mk help."
 	@echo "Available tools: $(DV_TOOLS)"
 
-include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
+include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/tool_*.mk))
+#include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
 
 endif
