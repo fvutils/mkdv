@@ -1,5 +1,5 @@
 #****************************************************************************
-#* vlsim.mk
+#* mkdv_vlsim.mk
 #*
 #* Simulator support for Verilator via the vlsim script
 #*
@@ -15,17 +15,21 @@
 #* TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
 #****************************************************************************
 
+MKDV_AVAIABLE_TOOLS += vlsim
+
+ifeq (vlsim,$(MKDV_TOOL))
+
 ifneq (1,$(RULES))
 VLSIM := $(PACKAGES_DIR)/python/bin/vlsim
-PYBFMS_DPI_LIB := $(shell $(PACKAGES_DIR)/python/bin/pybfms lib)
-COCOTB_PREFIX := $(shell $(PACKAGES_DIR)/python/bin/cocotb-config --prefix)
 
 ifneq (,$(DEBUG))
 VLSIM_OPTIONS += --trace-fst
 SIMV_ARGS += +vlsim.trace
-SIMV := simv.debug
+#SIMV = $(MKDV_CACHEDIR)/simv.debug
+SIMV = simv.debug
 else
-SIMV := simv.ndebug
+#SIMV = $(MKDV_CACHEDIR)/simv.ndebug
+SIMV = simv.ndebug
 endif
 
 # Enable VPI for Verilator
@@ -37,22 +41,21 @@ VLSIM_OPTIONS += $(foreach def,$(DEFINES),+define+$(def))
 VLSIM_OPTIONS += $(foreach spec,$(VLSIM_CLKSPEC), -clkspec $(spec))
 SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
 
-DPI_LIBS += $(PYBFMS_DPI_LIB)
-VPI_LIBS += $(COCOTB_PREFIX)/cocotb/libs/libcocotbvpi_verilator.so
-
 else # Rules
 
 build : $(SIMV)
 
-$(SIMV) : $(SRCS) pybfms_gen.sv pybfms_gen.c
-	$(VLSIM) -o $@ $(VLSIM_OPTIONS) $(SRCS) pybfms_gen.sv pybfms_gen.c \
+$(SIMV) : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
+ifeq (,$(VLSIM_CLKSPEC))
+	@echo "Error: no VLSIM_CLKSPEC specified (eg clk=10ns)"; exit 1
+endif
+	$(VLSIM) -o $@ $(VLSIM_OPTIONS) $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS) \
 		$(foreach l,$(DPI_LIBS),$(l))
 
-run : $(SIMV)
+run-vlsim : $(SIMV)
 	./$(SIMV) $(SIMV_ARGS)
 	
-pybfms_gen.sv :
-	$(PACKAGES_DIR)/python/bin/pybfms generate \
-		-l sv $(foreach m,$(PYBFMS_MODULES),-m $(m)) -o $@
 
 endif
+
+endif # MKDV_TOOL == vlsim

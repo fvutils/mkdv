@@ -1,5 +1,5 @@
 #****************************************************************************
-#* tool_icarus.mk
+#* mkdv_icarus.mk
 #*
 #* Simulator support for Icarus Verilog
 #*
@@ -13,9 +13,12 @@
 #* TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
 #****************************************************************************
 
+MKDV_AVAIABLE_TOOLS += icarus
+
+ifeq ($(MKDV_TOOL),icarus)
+
 ifneq (1,$(RULES))
-PYBFMS_VPI_LIB := $(shell $(PACKAGES_DIR)/python/bin/pybfms lib)
-COCOTB_PREFIX := $(shell $(PACKAGES_DIR)/python/bin/cocotb-config --prefix)
+
 TIMEOUT?=1ms
 
 DEFINES += IVERILOG HAVE_HDL_CLOCKGEN NEED_TIMESCALE
@@ -47,25 +50,20 @@ endif
 
 IVERILOG_OPTIONS += $(foreach inc,$(INCDIRS),-I $(inc))
 IVERILOG_OPTIONS += $(foreach def,$(DEFINES),-D $(def))
+IVERILOG_OPTIONS += -s $(TOP_MODULE)
 VVP_OPTIONS += $(foreach vpi,$(VPI_LIBS),-m $(vpi))
-
-VPI_LIBS += $(PYBFMS_VPI_LIB)
-VPI_LIBS += $(COCOTB_PREFIX)/cocotb/libs/libcocotbvpi_icarus.vpl
 
 else # Rules
 
 build-icarus : $(SIMV)
 
-$(SIMV) : $(SRCS) pybfms_gen.v
-	iverilog -o $@ $(IVERILOG_OPTIONS) $(SRCS) pybfms_gen.v 
+$(SIMV) : $(MKDV_VL_SRCS)
+	iverilog -o $@ -M depfile.mk $(IVERILOG_OPTIONS) $(MKDV_VL_SRCS)
 
 run-icarus : $(SIMV)
 	@echo "PYTHONPATH=$(PYTHONPATH)"
 	vvp $(VVP_OPTIONS) $(SIMV) $(SIMV_ARGS)
-	
-pybfms_gen.v :
-	@echo "PYTHONPATH=$(PYTHONPATH)"
-	$(PACKAGES_DIR)/python/bin/pybfms generate \
-		-l vlog $(foreach m,$(PYBFMS_MODULES),-m $(m)) -o $@
 
 endif
+
+endif # ifeq $(MKDV_TOOL) == icarus

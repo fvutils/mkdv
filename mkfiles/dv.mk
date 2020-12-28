@@ -1,8 +1,10 @@
 #****************************************************************************
-#* dv.mk
+#* mkdv.mk
 #* common makefile
 #****************************************************************************
 DV_MK_MKFILES_DIR    := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+
+CWD := $(shell pwd)
 
 ifneq (1,$(RULES))
 PACKAGES_DIR ?= PACKAGES_DIR_unset
@@ -24,16 +26,32 @@ export PATH
 INCDIRS += $(DV_MK_MKFILES_DIR)/../include
 
 #include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
-include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/tool_*.mk))
+include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 
 else # Rules
 
-all : run-$(TOOL)
+run : 
+ifeq (,$(MKDV_MK))
+	@echo "Error: MKDV_MK is not set"; exit 1
+endif
+ifeq (,$(MKDV_TOOL))
+	@echo "Error: MKDV_TOOL is not set"; exit 1
+endif
+ifeq (,$(findstring $(MKDV_TOOL),$(MKDV_AVAIABLE_TOOLS)))
+	@echo "Error: MKDV_TOOL $(MKDV_TOOL) is not available ($(MKDV_AVAILABLE_TOOLS))"; exit 1
+endif
+	rm -rf rundir
+	mkdir rundir
+	mkdir -p cache
+	$(MAKE) -C rundir -f $(MKDV_MK) \
+		MKDV_RUNDIR=$(CWD)/rundir \
+		MKDV_CACHEDIR=$(CWD)/cache \
+		run-$(MKDV_TOOL)
 
 clean-all : $(foreach tool,$(DV_TOOLS),clean-$(tool))
 
-clean : clean-$(TOOL)
-	rm -f results.xml
+clean : 
+	rm -rf rundir cache
 
 help : help-$(TOOL)
 
@@ -41,7 +59,7 @@ help-all :
 	@echo "dv-mk help."
 	@echo "Available tools: $(DV_TOOLS)"
 
-include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/tool_*.mk))
+include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 #include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
 
 endif
