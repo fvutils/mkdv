@@ -2,7 +2,7 @@
 #* mkdv.mk
 #* common makefile
 #****************************************************************************
-DV_MK_MKFILES_DIR    := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
+DV_MK_MKFILES_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 CWD := $(shell pwd)
 
@@ -13,6 +13,7 @@ TOOL ?= unknown
 TIMEOUT ?= 1ms
 
 MKDV_MKFILES_PATH += $(DV_MK_MKFILES_DIR)
+MKDV_INCLUDE_DIR = $(abspath $(DV_MK_MKFILES_DIR)/../include)
 
 
 # PYBFMS_MODULES += wishbone_bfms
@@ -26,18 +27,20 @@ export PATH
 INCDIRS += $(DV_MK_MKFILES_DIR)/../include
 
 #include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
+INCFILES = $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 
 else # Rules
 
 run : 
+	@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
 ifeq (,$(MKDV_MK))
 	@echo "Error: MKDV_MK is not set"; exit 1
 endif
 ifeq (,$(MKDV_TOOL))
 	@echo "Error: MKDV_TOOL is not set"; exit 1
 endif
-ifeq (,$(findstring $(MKDV_TOOL),$(MKDV_AVAIABLE_TOOLS)))
+ifeq (,$(findstring $(MKDV_TOOL),$(MKDV_AVAILABLE_TOOLS)))
 	@echo "Error: MKDV_TOOL $(MKDV_TOOL) is not available ($(MKDV_AVAILABLE_TOOLS))"; exit 1
 endif
 	rm -rf rundir

@@ -2,6 +2,10 @@
 #* mkdv_pybfms.mk
 #****************************************************************************
 
+ifneq (1,$(RULES))
+MKDV_AVAILABLE_PLUGINS += pybfms
+endif
+
 ifneq (,$(findstring pybfms,$(MKDV_PLUGINS)))
 
 ifneq (1,$(RULES))

@@ -15,7 +15,9 @@
 #* TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
 #****************************************************************************
 
-MKDV_AVAIABLE_TOOLS += vlsim
+ifneq (1,$(RULES))
+MKDV_AVAILABLE_TOOLS += vlsim
+endif
 
 ifeq (vlsim,$(MKDV_TOOL))
 

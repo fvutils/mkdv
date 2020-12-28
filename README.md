@@ -1,2 +1,6 @@
-# sim-mk
-Makefiles to run cocotb and pybfm testbench environments on multiple simulators
+# mkdv
+Provides a Makefile and Python-based harness for running DV tools. Users 
+primarily develop Makefiles that capture sources and options. mkdv provides
+common Makefiles for running DV tools. 
+
+

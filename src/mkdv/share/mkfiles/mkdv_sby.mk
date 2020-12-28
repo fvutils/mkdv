@@ -2,7 +2,9 @@
 #* mkdv_sby.mk
 #****************************************************************************
 
+ifneq (1,$(RULES))
 MKDV_AVAILABLE_TOOLS += sby
+endif
 
 ifeq (sby,$(MKDV_TOOL))
 
@@ -56,3 +58,4 @@ help-sby :
 endif
 
 endif
+

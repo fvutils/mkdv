@@ -13,7 +13,9 @@
 #* TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
 #****************************************************************************
 
-MKDV_AVAIABLE_TOOLS += icarus
+ifneq (1,$(RULES))
+MKDV_AVAILABLE_TOOLS += icarus
+endif
 
 ifeq ($(MKDV_TOOL),icarus)
 
@@ -63,6 +65,7 @@ $(SIMV) : $(MKDV_VL_SRCS)
 run-icarus : $(SIMV)
 	@echo "PYTHONPATH=$(PYTHONPATH)"
 	vvp $(VVP_OPTIONS) $(SIMV) $(SIMV_ARGS)
+	
 
 endif
 

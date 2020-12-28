@@ -4,7 +4,9 @@
 #* mkdv support for cocotb
 #****************************************************************************
 
+ifneq (1,$(RULES))
 MKDV_AVAILABLE_PLUGINS += cocotb
+endif
 
 ifneq (,$(findstring cocotb,$(MKDV_PLUGINS)))
 ifneq (1,$(RULES))
