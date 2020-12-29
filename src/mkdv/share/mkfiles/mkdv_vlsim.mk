@@ -4,8 +4,8 @@
 #* Simulator support for Verilator via the vlsim script
 #*
 #* SRCS           - List of source files
-#* INCDIRS        - Include paths
-#* DEFINES        - Defines
+#* MKDV_VL_INCDIRS        - Include paths
+#* MKDV_VL_DEFINES        - MKDV_VL_DEFINES
 #* PYBFMS_MODULES - Modules to query for BFMs
 #* SIM_ARGS       - generic simulation arguments
 #* VLSIM_SIM_ARGS - vlsim-specific simulation arguments
@@ -38,24 +38,25 @@ endif
 VLSIM_OPTIONS += --vpi
 VLSIM_OPTIONS += --top-module $(TOP_MODULE)
 
-VLSIM_OPTIONS += $(foreach inc,$(INCDIRS),+incdir+$(inc))
-VLSIM_OPTIONS += $(foreach def,$(DEFINES),+define+$(def))
+VLSIM_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
+VLSIM_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
 VLSIM_OPTIONS += $(foreach spec,$(VLSIM_CLKSPEC), -clkspec $(spec))
 SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
+SIMV_ARGS += +vlsim.timeout=$(MKDV_TIMEOUT)
 
 else # Rules
 
-build : $(SIMV)
+build : $(MKDV_CACHEDIR)/$(SIMV)
 
-$(SIMV) : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
+$(MKDV_CACHEDIR)/$(SIMV) : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
 ifeq (,$(VLSIM_CLKSPEC))
 	@echo "Error: no VLSIM_CLKSPEC specified (eg clk=10ns)"; exit 1
 endif
-	$(VLSIM) -o $@ $(VLSIM_OPTIONS) $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS) \
+	cd $(MKDV_CACHEDIR) ; $(VLSIM) -o $(notdir $@) $(VLSIM_OPTIONS) $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS) \
 		$(foreach l,$(DPI_LIBS),$(l))
 
-run-vlsim : $(SIMV)
-	./$(SIMV) $(SIMV_ARGS)
+run-vlsim : $(MKDV_CACHEDIR)/$(SIMV)
+	$(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
 	
 
 endif

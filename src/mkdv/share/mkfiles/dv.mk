@@ -8,9 +8,7 @@ CWD := $(shell pwd)
 
 ifneq (1,$(RULES))
 PACKAGES_DIR ?= PACKAGES_DIR_unset
-TOOL ?= unknown
-#SIMTYPE ?= functional
-TIMEOUT ?= 1ms
+MKDV_TIMEOUT ?= 1ms
 
 MKDV_MKFILES_PATH += $(DV_MK_MKFILES_DIR)
 MKDV_INCLUDE_DIR = $(abspath $(DV_MK_MKFILES_DIR)/../include)
@@ -24,11 +22,13 @@ MKDV_INCLUDE_DIR = $(abspath $(DV_MK_MKFILES_DIR)/../include)
 PATH := $(PACKAGES_DIR)/python/bin:$(PATH)
 export PATH
 
-INCDIRS += $(DV_MK_MKFILES_DIR)/../include
+MKDV_VL_INCDIRS += $(DV_MK_MKFILES_DIR)/../include
 
-#include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
 INCFILES = $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
+
+PYTHONPATH := $(subst $(eval) ,:,$(MKDV_PYTHONPATH))
+export PYTHONPATH
 
 else # Rules
 
@@ -45,10 +45,10 @@ ifeq (,$(findstring $(MKDV_TOOL),$(MKDV_AVAILABLE_TOOLS)))
 endif
 	rm -rf rundir
 	mkdir rundir
-	mkdir -p cache
+	mkdir -p cache/$(MKDV_TOOL)
 	$(MAKE) -C rundir -f $(MKDV_MK) \
 		MKDV_RUNDIR=$(CWD)/rundir \
-		MKDV_CACHEDIR=$(CWD)/cache \
+		MKDV_CACHEDIR=$(CWD)/cache/$(MKDV_TOOL) \
 		run-$(MKDV_TOOL)
 
 clean-all : $(foreach tool,$(DV_TOOLS),clean-$(tool))
@@ -63,6 +63,5 @@ help-all :
 	@echo "Available tools: $(DV_TOOLS)"
 
 include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
-#include $(wildcard $(DV_MK_MKFILES_DIR)/tool_*.mk)
 
 endif
