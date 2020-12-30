@@ -50,6 +50,10 @@ endif
 		MKDV_RUNDIR=$(CWD)/rundir \
 		MKDV_CACHEDIR=$(CWD)/cache/$(MKDV_TOOL) \
 		run-$(MKDV_TOOL)
+		
+ifneq (,$(MKDV_TESTS))
+else
+endif	
 
 clean-all : $(foreach tool,$(DV_TOOLS),clean-$(tool))
 
