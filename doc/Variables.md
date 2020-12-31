@@ -9,6 +9,8 @@
 
 These variables are used inside the Makefile system.
 
+- MKDV_RUN_DEPS -- Dependencies that must be in place to run
+
 - MKDV_TOOL     -- Primary tool to be run
 - MKDV_PLUGINS  -- Plug-ins to be used in addition to the primary tool
 - MKDV_VL_SRCS  -- Verilog sources
@@ -18,6 +20,8 @@ These variables are used inside the Makefile system.
 
 - MKDV_VL_INCDIRS
 - MKDV_VL_DEFINES
+
+- MKDV_RUN_ARGS         -- Arguments to be passed to tool execution
 
 - MKDV_PYTHONPATH       -- List of Python library directories
 

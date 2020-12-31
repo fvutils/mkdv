@@ -44,6 +44,8 @@ VLSIM_OPTIONS += $(foreach spec,$(VLSIM_CLKSPEC), -clkspec $(spec))
 SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
 SIMV_ARGS += +vlsim.timeout=$(MKDV_TIMEOUT)
 
+MKDV_RUN_DEPS += $(MKDV_CACHEDIR)/$(SIMV)
+
 else # Rules
 
 build : $(MKDV_CACHEDIR)/$(SIMV)
@@ -55,8 +57,8 @@ endif
 	cd $(MKDV_CACHEDIR) ; $(VLSIM) -o $(notdir $@) $(VLSIM_OPTIONS) $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS) \
 		$(foreach l,$(DPI_LIBS),$(l))
 
-run-vlsim : $(MKDV_CACHEDIR)/$(SIMV)
-	$(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
+run-vlsim : $(MKDV_RUN_DEPS)
+	$(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS) $(MKDV_RUN_ARGS)
 	
 
 endif

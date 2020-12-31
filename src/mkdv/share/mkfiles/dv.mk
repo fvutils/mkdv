@@ -6,7 +6,17 @@ DV_MK_MKFILES_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 
 CWD := $(shell pwd)
 
+
 ifneq (1,$(RULES))
+
+ifeq (,$(MKDV_RUNDIR))
+MKDV_RUNDIR=$(CWD)/rundir
+endif
+
+ifeq (,$(MKDV_CACHEDIR))
+MKDV_CACHEDIR=$(CWD)/cache/$(MKDV_TOOL)
+endif
+
 PACKAGES_DIR ?= PACKAGES_DIR_unset
 MKDV_TIMEOUT ?= 1ms
 
@@ -32,6 +42,7 @@ export PYTHONPATH
 
 else # Rules
 
+
 run : 
 	@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
 ifeq (,$(MKDV_MK))
@@ -43,12 +54,12 @@ endif
 ifeq (,$(findstring $(MKDV_TOOL),$(MKDV_AVAILABLE_TOOLS)))
 	@echo "Error: MKDV_TOOL $(MKDV_TOOL) is not available ($(MKDV_AVAILABLE_TOOLS))"; exit 1
 endif
-	rm -rf rundir
-	mkdir rundir
-	mkdir -p cache/$(MKDV_TOOL)
-	$(MAKE) -C rundir -f $(MKDV_MK) \
-		MKDV_RUNDIR=$(CWD)/rundir \
-		MKDV_CACHEDIR=$(CWD)/cache/$(MKDV_TOOL) \
+	if test $(CWD) != $(MKDV_RUNDIR); then rm -rf $(MKDV_RUNDIR); fi
+	mkdir -p $(MKDV_RUNDIR)
+	mkdir -p $(MKDV_CACHEDIR)
+	$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
+		MKDV_RUNDIR=$(MKDV_RUNDIR) \
+		MKDV_CACHEDIR=$(MKDV_CACHEDIR) \
 		run-$(MKDV_TOOL)
 		
 ifneq (,$(MKDV_TESTS))

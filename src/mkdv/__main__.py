@@ -9,6 +9,7 @@ import os
 from mkdv.runner import Runner
 from mkdv.test_loader import TestLoader
 import asyncio
+from _datetime import date, datetime
 
 
 def mkfile(args):
@@ -17,7 +18,6 @@ def mkfile(args):
     
 def list_tests(args):
     loader = TestLoader()
-    
     specs = loader.load(os.getcwd())
     
     r = Runner(os.getcwd(), specs)
@@ -26,6 +26,24 @@ def list_tests(args):
     loop = asyncio.get_event_loop()
     loop.run_until_complete(r.runjobs())
     print("<-- run")
+    
+def regress(args):
+    loader = TestLoader()
+    specs = loader.load(os.getcwd())
+
+    regress = os.path.join(os.getcwd(), "regress")
+    rundir = os.path.join(regress, 
+                          datetime.now().strftime("%Y%m%d_%H%M%S"))
+    
+    os.makedirs(rundir, exist_ok=True)
+    
+    r = Runner(rundir, specs)
+
+    print("--> run " + str(r))
+    loop = asyncio.get_event_loop()
+    loop.run_until_complete(r.runjobs())
+    print("<-- run")
+    
     
 
 def get_parser():
@@ -43,6 +61,10 @@ def get_parser():
         help="Returns the path to dv.mk")
     mkfile_cmd.set_defaults(func=mkfile)
     
+    regress_cmd = subparser.add_parser("regress",
+        help="Run a series of tests")
+    regress_cmd.add_argument("-t", "--test-dir")
+    regress_cmd.set_defaults(func=regress)    
     
     return parser
 

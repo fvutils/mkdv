@@ -4,24 +4,26 @@ Created on Dec 30, 2020
 @author: mballance
 '''
 
-import multiprocessing
-import subprocess
 import asyncio
-from asyncio.tasks import FIRST_COMPLETED
 from asyncio.subprocess import DEVNULL, STDOUT
+from asyncio.tasks import FIRST_COMPLETED
+import multiprocessing
+import os
+import subprocess
+
 
 class Runner(object):
     
     def __init__(self, root, specs):
-        print("Runner::__init__")
         self.root = root
         self.specs = specs
-        self.maxpar = 1
+        self.maxpar = 10
         
     async def runjobs(self):
-        print("run")
-        
         loop = asyncio.get_event_loop()
+        
+        # Ensure each test has a unique name
+        name_m = {}
         
         active_procs = []
 
@@ -40,16 +42,34 @@ class Runner(object):
             # Launch new jobs while there is quota 
             # and            
             while avail_jobs > 0 and spec_i < len(self.specs):
+                spec = self.specs[spec_i]
+
+                rundir = os.path.join(self.root, spec.fullname)
+                if spec.fullname in name_m.keys():
+                    # Need to disambiguate
+                    id = name_m[spec.fullname]+1
+                    rundir += "_%04d" % (id,)
+                    name_m[spec.fullname] = id
+                else:
+                    name_m[spec.fullname] = 0
+                    
+                os.makedirs(rundir, exist_ok=True)
+
                 cmdline = ["make"]
                 cmdline.append("-f")
                 cmdline.append(self.specs[spec_i].mkdv_mk)
+                cmdline.append("MKDV_RUNDIR=" + rundir)
+                cmdline.append("MKDV_CACHEDIR=" + rundir)
                 cmdline.append("run")
-
+                
+                stdout = DEVNULL
+                
                 print("cmdline: " + str(cmdline))                
                 proc = await asyncio.subprocess.create_subprocess_exec(
                     *cmdline,
+                    cwd=rundir,
                     stderr=STDOUT,
-                    stdout=DEVNULL)
+                    stdout=stdout)
                 
                 print("proc=" + str(proc))
                 

@@ -22,6 +22,9 @@ else
 	endif
 endif
 
+MODULE=$(MKDV_COCOTB_MODULE)
+export MODULE
+
 
 else # Rules
 

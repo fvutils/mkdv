@@ -10,5 +10,6 @@ class TestSpec(object):
         self.mkdv_mk = mkdv_mk
         self.fullname = fullname
         self.localname = localname
+        self.rundir = None
         self.variables = {}
 
