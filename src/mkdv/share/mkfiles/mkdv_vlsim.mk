@@ -43,18 +43,20 @@ VLSIM_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
 VLSIM_OPTIONS += $(foreach spec,$(VLSIM_CLKSPEC), -clkspec $(spec))
 SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
 SIMV_ARGS += +vlsim.timeout=$(MKDV_TIMEOUT)
+SIMV_ARGS += $(MKDV_RUN_ARGS)
 
-MKDV_RUN_DEPS += $(MKDV_CACHEDIR)/$(SIMV)
+MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/$(SIMV)
 
 else # Rules
 
-build : $(MKDV_CACHEDIR)/$(SIMV)
+build-vlsim : $(MKDV_BUILD_DEPS)
 
 $(MKDV_CACHEDIR)/$(SIMV) : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
 ifeq (,$(VLSIM_CLKSPEC))
 	@echo "Error: no VLSIM_CLKSPEC specified (eg clk=10ns)"; exit 1
 endif
-	cd $(MKDV_CACHEDIR) ; $(VLSIM) -o $(notdir $@) $(VLSIM_OPTIONS) $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS) \
+	cd $(MKDV_CACHEDIR) ; flock $(MKDV_CACHEDIR) $(VLSIM) -o $(notdir $@) \
+		$(VLSIM_OPTIONS) $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS) \
 		$(foreach l,$(DPI_LIBS),$(l))
 
 run-vlsim : $(MKDV_RUN_DEPS)

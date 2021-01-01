@@ -1,5 +1,5 @@
 #****************************************************************************
-#* questa.mk
+#* mkdv_questa.mk
 #*
 #* Simulator support for Mentor Questa
 #*
@@ -14,56 +14,37 @@
 #* TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
 #****************************************************************************
 
+MKDV_AVAILABLE_TOOLS += questa
+
+ifeq (questa,$(MKDV_TOOL))
 ifneq (1,$(RULES))
-PYBFMS_DPI_LIB := $(shell $(PACKAGES_DIR)/python/bin/pybfms lib)
-COCOTB_PREFIX := $(shell $(PACKAGES_DIR)/python/bin/cocotb-config --prefix)
-
-IFC?=vpi
-
-ifeq (dpi,$(IFC))
-DPI_LIBS += $(subst .so,,$(PYBFMS_DPI_LIB))
-else
-VPI_LIBS += $(PYBFMS_DPI_LIB)
-endif
-
-VPI_LIBS += $(COCOTB_PREFIX)/cocotb/libs/libcocotbvpi_modelsim.so
 
 DEFINES += HAVE_HDL_CLOCKGEN
 
-VLOG_OPTIONS += $(foreach inc,$(INCDIRS),+incdir+$(inc))
-VLOG_OPTIONS += $(foreach def,$(DEFINES),+define+$(def))
+VLOG_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
+VLOG_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
 VSIM_OPTIONS += $(foreach vpi,$(VPI_LIBS),-pli $(vpi))
 VSIM_OPTIONS += $(foreach dpi,$(DPI_LIBS),-sv_lib $(dpi))
 
-
-ifeq (dpi,$(IFC))
-SRCS += pybfms_gen.sv pybfms_gen.c
-VSIM_OPTIONS += -dpioutoftheblue 1
-else
-SRCS += pybfms_gen.v
-endif
-#SRCS += pybfms_gen.v
+MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/work
 
 else # Rules
 
-build : $(SRCS)
+build-questa : $(MKDV_BUILD_DEPS)
+
+$(MKDV_CACHEDIR)/work : $(MKDV_VL_SRCS)
 	vlib work
-	vlog $(VLOG_OPTIONS) $(SRCS)
+	vlog $(VLOG_OPTIONS) $(MKDV_VL_SRCS)
 #	vopt -access=rw+/. -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
 	vopt -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
 
 
-run : build
+run-questa : $(MKDV_RUN_DEPS)
+	vmap work $(MKDV_CACHEDIR)/work
 	vsim -batch -do "run $(TIMEOUT); quit -f" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
-		-qwavedb=+report=class+signal
+		-qwavedb=+report=class+signal \
+		$(MKDV_RUN_ARGS)
 
-pybfms_gen.sv pybfms_gen.c :
-	$(PACKAGES_DIR)/python/bin/pybfms generate \
-		-l sv $(foreach m,$(PYBFMS_MODULES),-m $(m)) -o $@
-
-pybfms_gen.v :
-	$(PACKAGES_DIR)/python/bin/pybfms generate \
-		-l vlog $(foreach m,$(PYBFMS_MODULES),-m $(m)) -o $@
-
+endif
 endif

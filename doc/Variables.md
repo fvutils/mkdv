@@ -9,7 +9,8 @@
 
 These variables are used inside the Makefile system.
 
-- MKDV_RUN_DEPS -- Dependencies that must be in place to run
+- MKDV_BUILD_DEPS -- Dependencies for the build target
+- MKDV_RUN_DEPS   -- Dependencies for the run target
 
 - MKDV_TOOL     -- Primary tool to be run
 - MKDV_PLUGINS  -- Plug-ins to be used in addition to the primary tool

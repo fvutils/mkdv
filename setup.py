@@ -21,11 +21,13 @@ setup(
     ]
   },
   setup_requires=[
+    'colorama',
     'setuptools_scm',
     'wheel',
     'pyyaml'
   ],
   install_requires=[
+    'colorama',
     'pyyaml'
   ],
 )

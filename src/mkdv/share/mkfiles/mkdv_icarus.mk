@@ -44,6 +44,7 @@ else
 endif
 
 SIMV_ARGS += +timeout=$(ICARUS_TIMEOUT)
+SIMV_ARGS += $(MKDV_RUN_ARGS)
 
 SIMV=simv.vvp
 ifneq (,$(DEBUG))
@@ -55,16 +56,17 @@ IVERILOG_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),-D $(def))
 IVERILOG_OPTIONS += -s $(TOP_MODULE)
 VVP_OPTIONS += $(foreach vpi,$(VPI_LIBS),-m $(vpi))
 
+MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/$(SIMV)
+
 else # Rules
 
-build-icarus : $(SIMV)
+build-icarus : $(MKDV_BUILD_DEPS)
 
 $(MKDV_CACHEDIR)/$(SIMV) : $(MKDV_VL_SRCS)
 	iverilog -o $@ -M depfile.mk $(IVERILOG_OPTIONS) $(MKDV_VL_SRCS)
 
-run-icarus : $(MKDV_CACHEDIR)/$(SIMV)
+run-icarus : $(MKDV_RUN_DEPS)
 	vvp $(VVP_OPTIONS) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
-	
 
 endif
 
