@@ -16,7 +16,12 @@ SBY_MODE ?= cover
 SBY_DEPTH ?= 16
 SBY_ENGINES ?= smtbmc:boolector
 
+MKDV_CHECK_TARGET ?= check-sby
+
 else # Rules
+
+# NOP
+build-sby : 
 
 run-sby : $(TOP_MODULE).sby
 	sby -f $(TOP_MODULE).sby
@@ -53,8 +58,12 @@ endif
 	done
 	echo "" >> $@; \
 
-clean-sby :
-	rm -rf $(TOP_MODULE).sby $(TOP_MODULE)
+check-sby:
+	$(Q)if test -f $(TOP_MODULE)/PASS; then \
+		echo "PASS: " > status.txt; \
+	else \
+		echo "FAIL: " > status.txt; \
+	fi
 
 desc-sby :
 	@echo "sby - Runs the SymbiYosys model-checking tool"

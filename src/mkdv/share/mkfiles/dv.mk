@@ -13,6 +13,10 @@ ifeq (,$(MKDV_RUNDIR))
 MKDV_RUNDIR=$(CWD)/rundir
 endif
 
+ifneq (1,$(MKDV_VERBOSE))
+Q=@
+endif
+
 ifeq (,$(MKDV_CACHEDIR))
 MKDV_CACHEDIR=$(CWD)/cache/$(MKDV_TOOL)
 endif
@@ -64,24 +68,24 @@ endif
 run : 
 	@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
 ifeq (,$(MKDV_MK))
-	@echo "Error: MKDV_MK is not set"; exit 1
+	$(Q)echo "Error: MKDV_MK is not set"; exit 1
 endif
 ifeq (,$(MKDV_TOOL))
-	@echo "Error: MKDV_TOOL is not set"; exit 1
+	$(Q)echo "Error: MKDV_TOOL is not set"; exit 1
 endif
 ifeq (,$(findstring $(MKDV_TOOL),$(MKDV_AVAILABLE_TOOLS)))
-	@echo "Error: MKDV_TOOL $(MKDV_TOOL) is not available ($(MKDV_AVAILABLE_TOOLS))"; exit 1
+	$(Q)echo "Error: MKDV_TOOL $(MKDV_TOOL) is not available ($(MKDV_AVAILABLE_TOOLS))"; exit 1
 endif
-	if test $(CWD) != $(MKDV_RUNDIR); then rm -rf $(MKDV_RUNDIR); fi
-	mkdir -p $(MKDV_RUNDIR)
-	$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
+	$(Q)if test $(CWD) != $(MKDV_RUNDIR); then rm -rf $(MKDV_RUNDIR); fi
+	$(Q)mkdir -p $(MKDV_RUNDIR)
+	$(Q)$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
 		MKDV_RUNDIR=$(MKDV_RUNDIR) \
 		MKDV_CACHEDIR=$(MKDV_CACHEDIR) \
 		run-$(MKDV_TOOL) || (echo "FAIL: exit status $$?" > status.txt; exit 1)
 ifeq (,$(MKDV_CHECK_TARGET))
-	echo "PASS: " > $(MKDV_RUNDIR)/status.txt
+	$(Q)echo "PASS: " > $(MKDV_RUNDIR)/status.txt
 else
-	$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
+	$(Q)$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
 		MKDV_RUNDIR=$(MKDV_RUNDIR) \
 		MKDV_CACHEDIR=$(MKDV_CACHEDIR) $(MKDV_CHECK_TARGET)
 endif

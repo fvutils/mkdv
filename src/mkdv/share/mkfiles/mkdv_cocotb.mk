@@ -31,7 +31,7 @@ MKDV_CHECK_TARGET ?= check-cocotb
 else # Rules
 
 check-cocotb:
-	if test ! -f results.xml; then \
+	$(Q)if test ! -f results.xml; then \
 		echo "FAIL: no results.xml file" > status.txt; \
 	else \
 		failure_wc=`grep 'failure' results.xml | wc -l`; \

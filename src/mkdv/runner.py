@@ -40,7 +40,7 @@ class Runner(object):
         # Start         
         spec_i = 0
 #        print("spec_i=" + str(spec_i) + " " + str(len(self.specs)))
-        while spec_i < len(self.specs):
+        while spec_i < len(self.specs) or len(active_procs) > 0:
 #            print("spec_i=" + str(spec_i) + " " + str(len(self.specs)))
 
             # Launch new jobs while there is quota 
@@ -72,7 +72,8 @@ class Runner(object):
                 cmdline.append(spec.mkdv_mk)
                 cmdline.append("MKDV_RUNDIR=" + rundir)
                 cmdline.append("MKDV_CACHEDIR=" + rundir)
-                cmdline.append("run")
+                # TODO: separate build/run
+                cmdline.append("all")
                 spec.rundir = rundir
 
                 stdout = open(os.path.join(rundir, "stdout.log"), "w")
@@ -80,7 +81,7 @@ class Runner(object):
 #                stdout = None
                 
 #                print("cmdline: " + str(cmdline))                
-                print(f"{Fore.GREEN}[Start]{Style.RESET_ALL} " + spec.fullname)
+                print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} " + spec.fullname)
                 sys.stdout.flush()
                 proc = await asyncio.subprocess.create_subprocess_exec(
                     *cmdline,
@@ -110,12 +111,38 @@ class Runner(object):
                 else:
                     p[2].close() # Close stdout save
                     if os.path.isfile(os.path.join(p[1].rundir, "status.txt")):
-                        # TOOD: go figure out what happened
-                        print(f"{Fore.GREEN}[PASS]{Style.RESET_ALL} " + p[1].fullname + " - no status.txt")
+                        is_passed,msg = self.checkstatus(os.path.join(p[1].rundir, "status.txt"))
+                        
+                        if is_passed:
+                            print(f"{Fore.GREEN}[PASS]{Style.RESET_ALL} " + p[1].fullname + msg)
+                        else:
+                            print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + msg)
                         pass
                     else:
                         print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - no status.txt")
                     sys.stdout.flush()
                     avail_jobs += 1
                 
-        
+       
+    def checkstatus(self, status_txt):
+        have_pass = False
+        have_fail = False
+        msg = ""
+        with open(status_txt, "r") as fp:
+            for l in fp.readlines():
+                if l.startswith("PASS:"):
+                    have_pass = True
+                    msg = l[len("PASS:"):].strip()
+                    break
+                elif l.startswith("FAIL:"):
+                    have_fail = True
+                    msg = l[len("FAIL:"):].strip()
+                    break
+
+        if not have_pass and not have_fail:
+            return (False,"no PASS or FAIL")
+        else:
+            return ((have_pass and not have_fail),msg)
+            
+                    
+                

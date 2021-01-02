@@ -41,7 +41,7 @@ $(MKDV_CACHEDIR)/work : $(MKDV_VL_SRCS)
 
 run-questa : $(MKDV_RUN_DEPS)
 	vmap work $(MKDV_CACHEDIR)/work
-	vsim -batch -do "run $(TIMEOUT); quit -f" \
+	vsim -batch -do "run $(MKDV_TIMEOUT); quit -f" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
 		-qwavedb=+report=class+signal \
 		$(MKDV_RUN_ARGS)

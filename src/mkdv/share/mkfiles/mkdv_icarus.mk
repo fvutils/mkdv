@@ -63,10 +63,10 @@ else # Rules
 build-icarus : $(MKDV_BUILD_DEPS)
 
 $(MKDV_CACHEDIR)/$(SIMV) : $(MKDV_VL_SRCS)
-	iverilog -o $@ -M depfile.mk $(IVERILOG_OPTIONS) $(MKDV_VL_SRCS)
+	$(Q)iverilog -o $@ -M depfile.mk $(IVERILOG_OPTIONS) $(MKDV_VL_SRCS)
 
 run-icarus : $(MKDV_RUN_DEPS)
-	vvp $(VVP_OPTIONS) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
+	$(Q)vvp $(VVP_OPTIONS) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
 
 endif
 
