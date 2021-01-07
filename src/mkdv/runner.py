@@ -13,6 +13,8 @@ from asyncio.subprocess import DEVNULL, STDOUT
 from asyncio.tasks import FIRST_COMPLETED
 from colorama import Fore
 from colorama import Style
+from typing import List
+from mkdv.job_queue import JobQueue
 
 class Runner(object):
     
@@ -28,6 +30,24 @@ class Runner(object):
         name_m = {}
         cache_m = {}
         cache_id = 0
+        n_passed = 0
+        n_failed = 0
+
+        # Map of mkdv.mk path -> job_queue        
+        queue_m = {}
+        
+        # Sort specs into the queues
+        for s in self.specs:
+            if s.mkdv_mk not in queue_m.keys():
+                queue_m[s.mkdv_mk] = JobQueue(s.mkdv_mk)
+            queue_m[s.mkdv_mk].jobs.append(s)
+            
+        active_queues = list(queue_m.values())
+        
+        status = await self.run_builds(active_queues)
+        
+        if not status:
+            return
         
         active_procs = []
 
@@ -39,15 +59,27 @@ class Runner(object):
 
         # Start         
         spec_i = 0
+        queue_i = 0
 #        print("spec_i=" + str(spec_i) + " " + str(len(self.specs)))
         while spec_i < len(self.specs) or len(active_procs) > 0:
 #            print("spec_i=" + str(spec_i) + " " + str(len(self.specs)))
 
+
             # Launch new jobs while there is quota 
             # and            
             while avail_jobs > 0 and spec_i < len(self.specs):
-                spec = self.specs[spec_i]
+                # Select a spec from one of the queues
+                queue = active_queues[queue_i]
+                spec = queue.jobs.pop()
+                
+                if len(queue.jobs) == 0:
+                    active_queues.pop(queue_i)
 
+                if len(active_queues) != 0:
+                    queue_i = (queue_i+1) % len(active_queues)
+                else:
+                    queue_i = 0
+                
                 rundir = os.path.join(self.root, spec.fullname)
                 if spec.fullname in name_m.keys():
                     # Need to disambiguate
@@ -57,23 +89,19 @@ class Runner(object):
                 else:
                     name_m[spec.fullname] = 0
 
-                if spec.mkdv_mk in cache_m.keys():
-                    id = cache_m[spec.mkdv_mk]
-                    cachedir = os.path.join(self.root, "cache_" + str(id))
-                else:
-                    cachedir = os.path.join(self.root, "cache_" + str(cache_id))
-                    cache_m[spec.mkdv_mk] = cache_id
-                    cache_id += 1
-
                 os.makedirs(rundir, exist_ok=True)
 
                 cmdline = ["make"]
                 cmdline.append("-f")
                 cmdline.append(spec.mkdv_mk)
                 cmdline.append("MKDV_RUNDIR=" + rundir)
-                cmdline.append("MKDV_CACHEDIR=" + rundir)
+                cmdline.append("MKDV_CACHEDIR=" + queue.cachedir)
+                cmdline.append("MKDV_TEST=" + spec.localname)
+                for v in spec.variables.keys():
+                    cmdline.append(v + "=" + str(spec.variables[v]))
+#                cmdline.append("MKDV_TEST=" + spec.localname)
                 # TODO: separate build/run
-                cmdline.append("all")
+                cmdline.append("run")
                 spec.rundir = rundir
 
                 stdout = open(os.path.join(rundir, "stdout.log"), "w")
@@ -114,14 +142,100 @@ class Runner(object):
                         is_passed,msg = self.checkstatus(os.path.join(p[1].rundir, "status.txt"))
                         
                         if is_passed:
-                            print(f"{Fore.GREEN}[PASS]{Style.RESET_ALL} " + p[1].fullname + msg)
+                            print(f"{Fore.GREEN}[PASS]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
+                            n_passed += 1
                         else:
-                            print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + msg)
+                            print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
+                            n_failed += 1
                         pass
                     else:
                         print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - no status.txt")
+                        n_failed += 1
                     sys.stdout.flush()
                     avail_jobs += 1
+
+        print()                    
+        print()                    
+        print(f"{Fore.YELLOW}[Run ]{Style.RESET_ALL} " + str(n_passed+n_failed))
+        print(f"{Fore.GREEN}[Pass]{Style.RESET_ALL} " + str(n_passed))
+        print(f"{Fore.RED}[Fail]{Style.RESET_ALL} " + str(n_failed))
+                    
+    async def run_builds(self, jobs : List[JobQueue]):
+        loop = asyncio.get_event_loop()
+        build_fails = 0
+        
+        # Start         
+        queue_i = 0
+        active_procs = []
+        
+        if self.maxpar > 0:
+            avail_jobs = self.maxpar
+        else:
+            # Launch everything
+            avail_jobs = len(jobs)
+        
+#        print("spec_i=" + str(spec_i) + " " + str(len(self.specs)))
+        while queue_i < len(jobs) or len(active_procs) > 0:
+#            print("spec_i=" + str(spec_i) + " " + str(len(self.specs)))
+
+            # Launch new jobs while there is quota 
+            # and            
+            while avail_jobs > 0 and queue_i < len(jobs):
+                job = jobs[queue_i]
+
+                job.cachedir = os.path.join(self.root, "cache_" + str(queue_i))
+                os.makedirs(job.cachedir, exist_ok=True)
+
+                cmdline = ["make"]
+                cmdline.append("-f")
+                cmdline.append(job.mkdv_mk)
+                cmdline.append("MKDV_RUNDIR=" + job.cachedir)
+                cmdline.append("MKDV_CACHEDIR=" + job.cachedir)
+                # TODO: separate build/run
+                cmdline.append("build")
+
+                stdout = open(os.path.join(job.cachedir, "stdout.log"), "w")
+#                stdout = DEVNULL
+#                stdout = None
+                
+#                print("cmdline: " + str(cmdline))                
+                print(f"{Fore.YELLOW}[Start Build]{Style.RESET_ALL} " + job.mkdv_mk)
+                sys.stdout.flush()
+                proc = await asyncio.subprocess.create_subprocess_exec(
+                    *cmdline,
+                    cwd=job.cachedir,
+                    stderr=STDOUT,
+                    stdout=stdout)
+                
+#                print("proc=" + str(proc))
+                
+                active_procs.append((proc,job,stdout))
+                
+                queue_i += 1
+                avail_jobs -= 1
+            
+            # Wait for at least once job to complete            
+            done, pending = await asyncio.wait(
+                [loop.create_task(p[0].wait()) for p in active_procs],
+                return_when=FIRST_COMPLETED)
+            
+            old_active_procs = active_procs
+            active_procs = []
+            
+            for p in old_active_procs:
+                if p[0].returncode is None:
+                    active_procs.append(p)
+                else:
+                    p[2].close() # Close stdout save
+                    if p[0].returncode == 0:
+                        print(f"{Fore.GREEN}[Build PASS]{Style.RESET_ALL} " + p[1].mkdv_mk)
+                    else:
+                        build_fails += 1
+                        print(f"{Fore.RED}[Build FAIL]{Style.RESET_ALL} " + p[1].mkdv_mk + " -- exit code " + str(p[0].returncode))
+                    sys.stdout.flush()
+                    avail_jobs += 1        
+                    
+        return build_fails == 0
                 
        
     def checkstatus(self, status_txt):
