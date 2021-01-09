@@ -45,6 +45,7 @@ run-openlane : $(MKDV_RUNDIR)/$(TOP_MODULE)/config.tcl
 		-v $(MKDV_RUNDIR):/mkdv_rundir \
 		$(foreach dir,$(SRCDIRS),-v $(dir):$(dir)) \
 		-e PDK_ROOT=$(PDK_ROOT) \
+		-e DESIGN_NAME=$(TOP_MODULE) \
 		-e VERILOG_FILES="$(MKDV_VL_SRCS)" \
 		-e VERILOG_INCLUDE_DIRS="$(MKDV_VL_INCDIRS)" \
 		-e SYNTH_DEFINES="$(MKDV_VL_DEFINES)" \

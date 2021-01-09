@@ -14,6 +14,7 @@
 #* TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
 #****************************************************************************
 
+ifeq (ncsim,$(MKDV_TOOL))
 ifneq (1,$(RULES))
 COMMON_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
 PACKAGES_DIR := $(abspath $(COMMON_DIR)/../../packages)
@@ -68,4 +69,5 @@ pybfms_gen.v :
 	$(PACKAGES_DIR)/python/bin/pybfms generate \
 		-l vlog $(foreach m,$(PYBFMS_MODULES),-m $(m)) -o $@
 
+endif
 endif
