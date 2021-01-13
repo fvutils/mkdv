@@ -43,7 +43,9 @@ def regress(args):
     loop = asyncio.get_event_loop()
     loop.run_until_complete(r.runjobs())
     print("<-- run")
-    
+   
+def run(args):
+    pass
     
 
 def get_parser():
@@ -65,6 +67,15 @@ def get_parser():
         help="Run a series of tests")
     regress_cmd.add_argument("-t", "--test-dir")
     regress_cmd.set_defaults(func=regress)    
+    
+    run_cmd = subparser.add_parser("run",
+        help="Perform a single run")
+    run_cmd.add_argument("-t", "--tool",
+        help="Specify the tool to run")
+    run_cmd.add_argument("-d", "--debug",
+        help="Run in debug mode")
+    run_cmd.set_defaults(func=run)
+
     
     return parser
 

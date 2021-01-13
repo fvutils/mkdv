@@ -44,6 +44,11 @@ include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 PYTHONPATH := $(subst $(eval) ,:,$(MKDV_PYTHONPATH))
 export PYTHONPATH
 
+
+#info :
+#	@echo "MKDV_AVAILABLE_TOOLS: $(MKDV_AVAILABLE_TOOLS)"
+#	@echo "MKDV_AVAIABLE_PLUGINS: $(MKDV_AVAILABLE_PLUGINS)"
+
 else # Rules
 
 # All is the default target run from the command line
@@ -104,6 +109,7 @@ help : help-$(TOOL)
 help-all : 
 	@echo "dv-mk help."
 	@echo "Available tools: $(DV_TOOLS)"
+	
 
 include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 
