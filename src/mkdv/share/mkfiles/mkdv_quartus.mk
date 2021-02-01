@@ -11,8 +11,8 @@ build-quartus :
 
 $(TOP_MODULE).qsf : 
 	echo "" > $@
-	echo 'set_global_assignment -name FAMILY "Cyclone V"' >> $@
-	echo "set_global_assignment -name DEVICE 5CGXFC7C7F23C8" >> $@
+	echo 'set_global_assignment -name FAMILY $(QUARTUS_FAMILY)' >> $@
+	echo "set_global_assignment -name DEVICE $(QUARTUS_DEVICE)" >> $@
 	echo "set_global_assignment -name TOP_LEVEL_ENTITY $(TOP_MODULE)" >> $@
 	for def in $(MKDV_VL_DEFINES); do \
 		echo "set_global_assignment -name VERILOG_MACRO \"$$def\"" >> $@; \
@@ -31,8 +31,8 @@ $(TOP_MODULE).qpf :
 	echo 'PROJECT_REVISION = "$(TOP_MODULE)"' > $@
 
 run-quartus : $(TOP_MODULE).qpf $(TOP_MODULE).qsf
-	quartus_map $(TOP_MODULE) #  --source=filtref.bdf --family="Cyclone V"
-	quartus_fit $(TOP_MODULE) # --part=EP3C10F256C8 --pack_register=minimize_area
+	quartus_map $(TOP_MODULE) #  --source=filtref.bdf --family=$(QUARTUS_FAMILY)
+	quartus_fit $(TOP_MODULE) # --part=$(QUARTUS_DEVICE) --pack_register=minimize_area
 	quartus_asm $(TOP_MODULE)					
 	quartus_sta $(TOP_MODULE)
 	
