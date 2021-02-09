@@ -24,6 +24,8 @@ ifeq (vlsim,$(MKDV_TOOL))
 ifneq (1,$(RULES))
 VLSIM := $(PACKAGES_DIR)/python/bin/vlsim
 
+MKDV_VL_DEFINES += HAVE_BIND
+
 ifneq (,$(DEBUG))
 VLSIM_OPTIONS += --trace-fst
 SIMV_ARGS += +vlsim.trace

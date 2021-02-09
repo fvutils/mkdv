@@ -20,6 +20,7 @@ ifeq (questa,$(MKDV_TOOL))
 ifneq (1,$(RULES))
 
 DEFINES += HAVE_HDL_CLOCKGEN
+MKDV_VL_DEFINES += HAVE_BIND
 
 VLOG_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
 VLOG_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
