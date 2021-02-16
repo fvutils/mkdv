@@ -20,6 +20,7 @@ ifeq (questa,$(MKDV_TOOL))
 ifneq (1,$(RULES))
 
 MKDV_VL_DEFINES += HAVE_HDL_CLOCKGEN
+MKDV_VL_DEFINES += HAVE_BIND
 
 VLOG_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
 VLOG_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
@@ -43,7 +44,7 @@ run-questa : $(MKDV_RUN_DEPS)
 	vmap work $(MKDV_CACHEDIR)/work
 	vsim -batch -do "run $(MKDV_TIMEOUT); quit -f" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
-		-qwavedb=+report=class+signal \
+		-qwavedb=+report=class+signal+memory \
 		$(MKDV_RUN_ARGS)
 
 endif

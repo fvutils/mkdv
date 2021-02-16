@@ -12,7 +12,7 @@
 #* VLSIM_CLKSPEC  - clock-generation options for VLSIM
 #* VPI_LIBS       - List of PLI libraries
 #* DPI_LIBS       - List of DPI libraries
-#* TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
+#* MKDV_TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
 #****************************************************************************
 
 ifneq (1,$(RULES))
@@ -23,6 +23,8 @@ ifeq (vlsim,$(MKDV_TOOL))
 
 ifneq (1,$(RULES))
 VLSIM := $(PACKAGES_DIR)/python/bin/vlsim
+
+MKDV_VL_DEFINES += HAVE_BIND
 
 ifneq (,$(DEBUG))
 VLSIM_OPTIONS += --trace-fst
