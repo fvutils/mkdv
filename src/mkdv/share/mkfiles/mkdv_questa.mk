@@ -19,7 +19,7 @@ MKDV_AVAILABLE_TOOLS += questa
 ifeq (questa,$(MKDV_TOOL))
 ifneq (1,$(RULES))
 
-DEFINES += HAVE_HDL_CLOCKGEN
+MKDV_VL_DEFINES += HAVE_HDL_CLOCKGEN
 MKDV_VL_DEFINES += HAVE_BIND
 
 VLOG_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
@@ -35,7 +35,7 @@ build-questa : $(MKDV_BUILD_DEPS)
 
 $(MKDV_CACHEDIR)/work : $(MKDV_VL_SRCS)
 	vlib work
-	vlog $(VLOG_OPTIONS) $(MKDV_VL_SRCS)
+	vlog $(VLOG_OPTIONS) $(MKDV_VL_SRCS) || (rm -rf work ; exit 1)
 #	vopt -access=rw+/. -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
 	vopt -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
 
