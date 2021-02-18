@@ -54,6 +54,7 @@ else # Rules
 # All is the default target run from the command line
 all : build run
 
+.PHONY: build
 build :
 ifeq (,$(MKDV_MK))
 	@echo "Error: MKDV_MK is not set"; exit 1
@@ -70,6 +71,7 @@ endif
 		MKDV_CACHEDIR=$(MKDV_CACHEDIR) \
 		build-$(MKDV_TOOL) || (echo "FAIL: exit status $$?" > status.txt; exit 1)
 
+.PHONY: run
 run : 
 	@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
 ifeq (,$(MKDV_MK))
