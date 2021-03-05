@@ -57,7 +57,7 @@ $(MKDV_CACHEDIR)/$(SIMV) : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
 ifeq (,$(VLSIM_CLKSPEC))
 	@echo "Error: no VLSIM_CLKSPEC specified (eg clk=10ns)"; exit 1
 endif
-	cd $(MKDV_CACHEDIR) ; flock $(MKDV_CACHEDIR) $(VLSIM) -o $(notdir $@) \
+	cd $(MKDV_CACHEDIR) ; $(VLSIM) -o $(notdir $@) \
 		$(VLSIM_OPTIONS) $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS) \
 		$(foreach l,$(DPI_LIBS),$(l))
 
