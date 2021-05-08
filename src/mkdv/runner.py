@@ -258,5 +258,3 @@ class Runner(object):
         else:
             return ((have_pass and not have_fail),msg)
             
-                    
-                

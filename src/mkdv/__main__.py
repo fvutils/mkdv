@@ -9,7 +9,10 @@ import os
 from mkdv.runner import Runner
 from mkdv.test_loader import TestLoader
 import asyncio
-from _datetime import date, datetime
+from .cmd_list import cmd_list
+from .cmd_regress import cmd_regress
+from .cmd_run import cmd_run
+import sys
 
 
 def mkfile(args):
@@ -27,24 +30,11 @@ def list_tests(args):
     loop.run_until_complete(r.runjobs())
     print("<-- run")
     
-def regress(args):
-    loader = TestLoader()
-    specs = loader.load(os.getcwd())
-
-    regress = os.path.join(os.getcwd(), "regress")
-    rundir = os.path.join(regress, 
-                          datetime.now().strftime("%Y%m%d_%H%M%S"))
-    
-    os.makedirs(rundir, exist_ok=True)
-    
-    r = Runner(rundir, specs)
-
-    print("--> run " + str(r))
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(r.runjobs())
-    print("<-- run")
    
 def run(args):
+    loader = TestLoader()
+    specs = loader.load(os.getcwd())
+   
     pass
     
 
@@ -57,7 +47,9 @@ def get_parser():
     
     list_cmd = subparser.add_parser("list",
         help="Discovers and lists available tests")
-    list_cmd.set_defaults(func=list_tests)
+    list_cmd.add_argument("-s", "--job-spec", dest="jobspec",
+        help="Specifies the job-spec file (mkdv.yaml by default)")
+    list_cmd.set_defaults(func=cmd_list)
     
     mkfile_cmd = subparser.add_parser("mkfile",
         help="Returns the path to dv.mk")
@@ -66,16 +58,20 @@ def get_parser():
     regress_cmd = subparser.add_parser("regress",
         help="Run a series of tests")
     regress_cmd.add_argument("-t", "--test-dir")
-    regress_cmd.set_defaults(func=regress)    
+    regress_cmd.set_defaults(func=cmd_regress)
     
     run_cmd = subparser.add_parser("run",
-        help="Perform a single run")
-    run_cmd.add_argument("-t", "--tool",
-        help="Specify the tool to run")
-    run_cmd.add_argument("-d", "--debug",
+        help="Run a single job")
+    run_cmd.add_argument("-t", "--tool", dest="tool",
+        help="Specify the tool to run (defaults to makefile setting)")
+    run_cmd.add_argument("-d", "--debug", dest="debug",
+        action="store_true",
         help="Run in debug mode")
-    run_cmd.set_defaults(func=run)
-
+    run_cmd.add_argument("-s", "--job-spec", dest="jobspec",
+        help="Specifies the job-spec file (mkdv.yaml by default)")
+    run_cmd.add_argument("-j", "--job-id", dest="jobid",
+        help="Specifies job-id to run.")
+    run_cmd.set_defaults(func=cmd_run)
     
     return parser
 
@@ -84,7 +80,10 @@ def main():
     
     args = parser.parse_args()
 
-    args.func(args)
+    status = args.func(args)
+    
+    if status is not None:
+        sys.exit(status)
 
 if __name__ == "__main__":
     main()

@@ -12,4 +12,9 @@ class TestSpec(object):
         self.localname = localname
         self.rundir = None
         self.variables = {}
+        
+    def append_run_variables(self, cmdline):
+        """Append job variables to command-line list"""
+        for v in self.variables.keys():
+            cmdline.append(v + "=" + str(self.variables[v]))
 
