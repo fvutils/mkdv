@@ -71,7 +71,7 @@ endif
 		MKDV_CACHEDIR=$(MKDV_CACHEDIR) \
 		build-$(MKDV_TOOL) || (echo "FAIL: exit status $$?" > status.txt; exit 1)
 
-.PHONY: run
+.PHONY: pre-run run post-run
 run : 
 	@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
 ifeq (,$(MKDV_MK))
@@ -88,7 +88,15 @@ endif
 	$(Q)$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
 		MKDV_RUNDIR=$(MKDV_RUNDIR) \
 		MKDV_CACHEDIR=$(MKDV_CACHEDIR) \
-		run-$(MKDV_TOOL) || (echo "FAIL: exit status $$?" > status.txt; exit 1)
+		pre-run || (echo "FAIL: pre-run failed with exit status $$?" > $(MKDV_RUNDIR)/status.txt; exit 1)
+	$(Q)$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
+		MKDV_RUNDIR=$(MKDV_RUNDIR) \
+		MKDV_CACHEDIR=$(MKDV_CACHEDIR) \
+		run-$(MKDV_TOOL) || (echo "FAIL: run failed with exit status $$?" > $(MKDV_RUNDIR)/status.txt; exit 1)
+	$(Q)$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
+		MKDV_RUNDIR=$(MKDV_RUNDIR) \
+		MKDV_CACHEDIR=$(MKDV_CACHEDIR) \
+		post-run || (echo "FAIL: post-run failed with exit status $$?" > $(MKDV_RUNDIR)/status.txt; exit 1)
 ifeq (,$(MKDV_CHECK_TARGET))
 	$(Q)echo "PASS: " > $(MKDV_RUNDIR)/status.txt
 else
@@ -96,6 +104,12 @@ else
 		MKDV_RUNDIR=$(MKDV_RUNDIR) \
 		MKDV_CACHEDIR=$(MKDV_CACHEDIR) $(MKDV_CHECK_TARGET)
 endif
+
+pre-run : $(MKDV_PRE_RUN_TARGETS)
+	$(Q)echo "Pre-Run: $(MKDV_PRE_RUN_TARGETS) $(MKDV_POST_RUN_TARGETS)"
+
+post-run : $(MKDV_POST_RUN_TARGETS)
+	$(Q)echo "Post-Run: $(MKDV_POST_RUN_TARGETS)"
 		
 ifneq (,$(MKDV_TESTS))
 else
