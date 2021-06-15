@@ -56,6 +56,7 @@ IVERILOG_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),-D $(def))
 IVERILOG_OPTIONS += -s $(TOP_MODULE)
 IVERILOG_OPTIONS += -g2005
 VVP_OPTIONS += $(foreach vpi,$(VPI_LIBS),-m $(vpi))
+SIMV_ARGS += -fst +dumpfile=simx.fst
 
 MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/$(SIMV)
 
