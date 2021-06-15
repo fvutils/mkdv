@@ -7,7 +7,7 @@ import asyncio
 import os
 
 from .runner import Runner
-from .test_loader import TestLoader
+from mkdv.jobspec_loader import JobspecLoader
 
 
 def cmd_list(args):
@@ -24,7 +24,7 @@ def cmd_list(args):
         if not os.path.exists(specfile):
             raise Exception("Default specfile " + specfile + " doesn't exist")
 
-    loader = TestLoader()
+    loader = JobspecLoader()
     specs = loader.load(
         os.path.dirname(specfile),
         specfile)

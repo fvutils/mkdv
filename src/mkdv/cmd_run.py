@@ -6,7 +6,7 @@ Created on Feb 20, 2021
 import asyncio
 import os
 
-from .test_loader import TestLoader
+from mkdv.jobspec_loader import JobspecLoader
 
 
 def cmd_run(args):
@@ -34,7 +34,7 @@ def cmd_run(args):
             else:
                 raise Exception("Default specfile " + specfile + " doesn't exist")        
         
-        loader = TestLoader()
+        loader = JobspecLoader()
         specs = loader.load(
             os.path.dirname(specfile),
             specfile)

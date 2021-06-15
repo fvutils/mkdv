@@ -7,12 +7,12 @@ import argparse
 import os
 
 from mkdv.runner import Runner
-from mkdv.test_loader import TestLoader
 import asyncio
 from .cmd_list import cmd_list
 from .cmd_regress import cmd_regress
 from .cmd_run import cmd_run
 import sys
+from mkdv.jobspec_loader import JobspecLoader
 
 
 def mkfile(args):
@@ -20,7 +20,7 @@ def mkfile(args):
     print(os.path.join(mkdv_dir, "share", "mkfiles", "dv.mk"))
     
 def list_tests(args):
-    loader = TestLoader()
+    loader = JobspecLoader()
     specs = loader.load(os.getcwd())
     
     r = Runner(os.getcwd(), specs)
@@ -32,7 +32,7 @@ def list_tests(args):
     
    
 def run(args):
-    loader = TestLoader()
+    loader = JobspecLoader()
     specs = loader.load(os.getcwd())
    
     pass

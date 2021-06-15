@@ -35,6 +35,9 @@ class Runner(object):
 
         # Map of mkdv.mk path -> job_queue        
         queue_m = {}
+
+        # Ensure we create the report directory first        
+        os.makedirs(os.path.join(self.root, "report"), exist_ok=True)
         
         # Sort specs into the queues
         for s in self.specs:
@@ -90,36 +93,52 @@ class Runner(object):
                     name_m[spec.fullname] = 0
 
                 os.makedirs(rundir, exist_ok=True)
-
-                cmdline = ["make"]
-                cmdline.append("-f")
-                cmdline.append(spec.mkdv_mk)
-                cmdline.append("MKDV_RUNDIR=" + rundir)
-                cmdline.append("MKDV_CACHEDIR=" + queue.cachedir)
-                cmdline.append("MKDV_TEST=" + spec.localname)
-                for v in spec.variables.keys():
-                    cmdline.append(v + "=" + str(spec.variables[v]))
-#                cmdline.append("MKDV_TEST=" + spec.localname)
-                # TODO: separate build/run
-                cmdline.append("run")
-                spec.rundir = rundir
-
-                stdout = open(os.path.join(rundir, "stdout.log"), "w")
-#                stdout = DEVNULL
-#                stdout = None
                 
-#                print("cmdline: " + str(cmdline))                
+                cmdline = [sys.executable, "-m", "mkdv.wrapper"]
+                cmdline.append(os.path.join(rundir, "job.yaml"))
+                
+                self.write_job_yaml(
+                    os.path.join(rundir, "job.yaml"),
+                    queue.cachedir,
+                    spec)
+
+#                 cmdline = ["make"]
+#                 cmdline.append("-f")
+#                 cmdline.append(spec.mkdv_mk)
+#                 cmdline.append("MKDV_RUNDIR=" + rundir)
+#                 cmdline.append("MKDV_CACHEDIR=" + queue.cachedir)
+#                 cmdline.append("MKDV_TEST=" + spec.localname)
+#                 cmdline.append("MKDV_JOB=" + spec.localname)
+#                 cmdline.append("MKDV_JOB_QNAME=" + spec.fullname)
+#                 cmdline.append("MKDV_JOB_PARENT=" + spec.fullname[0:-(len(spec.localname)+1)])
+#                 for v in spec.variables.keys():
+#                     cmdline.append(v + "=" + str(spec.variables[v]))
+# #                cmdline.append("MKDV_TEST=" + spec.localname)
+#                 # TODO: separate build/run
+#                 cmdline.append("run")
+                spec.rundir = rundir
+# 
+#                 stdout = open(os.path.join(rundir, "stdout.log"), "w")
+# #                stdout = DEVNULL
+# #                stdout = None
+#                 
+# #                print("cmdline: " + str(cmdline))                
                 print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} " + spec.fullname)
                 sys.stdout.flush()
+#                 proc = await asyncio.subprocess.create_subprocess_exec(
+#                     *cmdline,
+#                     cwd=rundir,
+#                     stderr=STDOUT,
+#                     stdout=stdout)
+
                 proc = await asyncio.subprocess.create_subprocess_exec(
                     *cmdline,
-                    cwd=rundir,
-                    stderr=STDOUT,
-                    stdout=stdout)
+                    cwd=rundir)
                 
 #                print("proc=" + str(proc))
                 
-                active_procs.append((proc,spec,stdout))
+#                active_procs.append((proc,spec,stdout))
+                active_procs.append((proc,spec,None))
                 
                 spec_i += 1
                 avail_jobs -= 1
@@ -137,7 +156,8 @@ class Runner(object):
                 if p[0].returncode is None:
                     active_procs.append(p)
                 else:
-                    p[2].close() # Close stdout save
+                    if p[2] is not None:
+                        p[2].close() # Close stdout save
                     if os.path.isfile(os.path.join(p[1].rundir, "status.txt")):
                         is_passed,msg = self.checkstatus(os.path.join(p[1].rundir, "status.txt"))
                         
@@ -159,6 +179,41 @@ class Runner(object):
         print(f"{Fore.YELLOW}[Run ]{Style.RESET_ALL} " + str(n_passed+n_failed))
         print(f"{Fore.GREEN}[Pass]{Style.RESET_ALL} " + str(n_passed))
         print(f"{Fore.RED}[Fail]{Style.RESET_ALL} " + str(n_failed))
+        
+    def write_job_yaml(
+            self, 
+            job_yaml,
+            cachedir,
+            spec):
+        
+        with open(job_yaml, "w") as fp:
+            fp.write("job:\n");
+            fp.write("    mkfile: %s\n" % spec.mkdv_mk)
+            fp.write("    cachedir: %s\n" % cachedir)
+            fp.write("    reportdir: %s\n" % os.path.join(self.root, "report"))
+            fp.write("    name: %s\n" % spec.localname)
+            fp.write("    qname: %s\n" % spec.fullname)
+            if len(spec.variables) > 0:
+                fp.write("    variables:\n")
+                for v in spec.variables.keys():
+                    fp.write("        %s: \"%s\"\n" % (v, spec.variables[v]))
+            if spec.description is not None:
+                pass
+            
+#            fp.write("    rundir: %s\n" % rundir)spec.mkdv_mk)
+#                 cmdline.append("-f")
+#                 cmdline.append(spec.mkdv_mk)
+#                 cmdline.append("MKDV_RUNDIR=" + rundir)
+#                 cmdline.append("MKDV_CACHEDIR=" + queue.cachedir)
+#                 cmdline.append("MKDV_TEST=" + spec.localname)
+#                 cmdline.append("MKDV_JOB=" + spec.localname)
+#                 cmdline.append("MKDV_JOB_QNAME=" + spec.fullname)
+#                 cmdline.append("MKDV_JOB_PARENT=" + spec.fullname[0:-(len(spec.localname)+1)])
+#                 for v in spec.variables.keys():
+#                     cmdline.append(v + "=" + str(spec.variables[v]))
+# #                cmdline.append("MKDV_TEST=" + spec.localname)
+#                 # TODO: separate build/run
+#                 cmdline.append("run")            
                     
     async def run_builds(self, jobs : List[JobQueue]):
         loop = asyncio.get_event_loop()

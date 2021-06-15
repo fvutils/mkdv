@@ -41,7 +41,7 @@ MKDV_VL_INCDIRS += $(DV_MK_MKFILES_DIR)/../include
 INCFILES = $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 
-PYTHONPATH := $(subst $(eval) ,:,$(MKDV_PYTHONPATH))
+PYTHONPATH := $(subst $(eval) ,:,$(MKDV_PYTHONPATH)):$(PYTHONPATH)
 export PYTHONPATH
 
 

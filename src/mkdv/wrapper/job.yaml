@@ -1,0 +1,18 @@
+
+job:
+    mkfile: ${path}
+    rundir: ${path}
+    cachedir: ${path}
+    reportdir: ${allure_path}
+    id: 
+        qname: top.a.b.c.d
+        name: a.b.c.d
+    description: |
+        This is a description of the job that is running
+        # Heading
+        *em*
+        More text
+        
+   
+   
+      

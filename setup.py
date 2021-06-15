@@ -21,10 +21,12 @@ setup(
     ]
   },
   setup_requires=[
+    'allure-python-commons',
     'colorama',
+    'markdown',
+    'pyyaml',
     'setuptools_scm',
     'wheel',
-    'pyyaml'
   ],
   install_requires=[
     'colorama',
