@@ -278,5 +278,8 @@ class JobspecLoader(object):
                 
                 for vk in ov.keys():
                     test.variables[vk] = ov[vk]
+        
+        if testdesc is not None and "description" in testdesc.keys():
+            test.description = testdesc["description"]
                 
                 

@@ -93,8 +93,10 @@ class Runner(object):
                     name_m[spec.fullname] = 0
 
                 os.makedirs(rundir, exist_ok=True)
-                
-                cmdline = [sys.executable, "-m", "mkdv.wrapper"]
+               
+#                cmdline = ['srun', '-E']
+                cmdline = []
+                cmdline.extend([sys.executable, "-m", "mkdv.wrapper"])
                 cmdline.append(os.path.join(rundir, "job.yaml"))
                 
                 self.write_job_yaml(
@@ -198,7 +200,9 @@ class Runner(object):
                 for v in spec.variables.keys():
                     fp.write("        %s: \"%s\"\n" % (v, spec.variables[v]))
             if spec.description is not None:
-                pass
+                fp.write("    description: |\n")
+                for line in spec.description.split("\n"):
+                    fp.write("        %s\n" % line);
             
 #            fp.write("    rundir: %s\n" % rundir)spec.mkdv_mk)
 #                 cmdline.append("-f")

@@ -57,7 +57,11 @@ def get_parser():
     
     regress_cmd = subparser.add_parser("regress",
         help="Run a series of tests")
-    regress_cmd.add_argument("-t", "--test-dir")
+    regress_cmd.add_argument("-t", "--test-spec", 
+        dest="test_specs", action="append",
+        help="Specifies a file containing a test-spec to use")
+    regress_cmd.add_argument("-j", "--max-par", dest="max_par",
+        help="Specifies maximum jobs to run in parallel")
     regress_cmd.set_defaults(func=cmd_regress)
     
     run_cmd = subparser.add_parser("run",

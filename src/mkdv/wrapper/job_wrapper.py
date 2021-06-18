@@ -4,19 +4,20 @@ Created on Jun 14, 2021
 @author: mballance
 '''
 import os
+import os
 import subprocess
+from typing import Dict, List, Tuple
+
 import allure
 import allure_commons
-import os
-
-from allure_commons.types import LabelType
 from allure_commons.logger import AllureFileLogger
-from allure_commons.utils import get_testplan
-from allure_commons.reporter import AllureReporter
-from allure_commons.utils import uuid4
-from allure_commons.utils import now
-from allure_commons.model2 import TestResult, Status
+from allure_commons.model2 import TestResult, Status, TestStepResult
 from allure_commons.model2 import TestStepResult, TestResult, TestBeforeResult, TestAfterResult
+from allure_commons.reporter import AllureReporter
+from allure_commons.types import LabelType
+from allure_commons.utils import get_testplan
+from allure_commons.utils import now
+from allure_commons.utils import uuid4
 
 
 class JobWrapper(object):
@@ -29,6 +30,7 @@ class JobWrapper(object):
         allure_commons.plugin_manager.register(self.file_logger)
 
         self.reporter = AllureReporter()
+        self.step_m : Dict[str, List[Tuple[str,TestStepResult]]] = {}
 
 
 
@@ -57,12 +59,14 @@ class JobWrapper(object):
                 
         job_log = open("job.log", "w")
 
-        uuid = uuid4()
-        test_case = TestResult(uuid=uuid, start=now())
+        test_uuid = uuid4()
+        test_case = TestResult(uuid=test_uuid, start=now())
         test_case.name = job["name"]
         test_case.fullname = job["qname"]
+        if "description" in job.keys():
+            test_case.description = job["description"]
 
-        self.reporter.schedule_test(uuid, test_case)
+        self.reporter.schedule_test(test_uuid, test_case)
 
 # step1_uuid = uuid4()
 # step = TestStepResult(name="My Step", start=now(), parameters=[])
@@ -86,11 +90,67 @@ class JobWrapper(object):
             line = proc.stdout.readline()
             if not line:
                 break
-
+           
             line = line.decode()
+            if line[0] == '@' and line.startswith("@step"):
+                if line.startswith("@step-begin"):
+                    begin = len("@step-begin")
+                    end = -1
+                    
+                    while begin < len(line) and line[begin].isspace():
+                        begin += 1
+                    end = begin + 1
+                    while end < len(line) and not line[end].isspace():
+                        end += 1
+                    
+                    key = line[begin:end]
+                    
+                    if key not in self.step_m.keys():
+                        root = TestStepResult(name=key)
+                        uuid = uuid4()
+                        self.reporter.start_step(None, uuid, root)
+                        self.step_m[key] = [(uuid, root)]
+                    step_s = self.step_m[key]
+                   
+                    parent_uuid = None if len(step_s) == 0 else step_s[-1][0]
+                    uuid = uuid4()
+
+                    step = TestStepResult(name=line[end+1:])
+                    step_s.append((uuid, step))
+                    self.reporter.start_step(parent_uuid, uuid, step)
+                  
+                elif line.startswith("@step-end"):
+                    begin = len("@step-end")
+                    end = -1
+                    
+                    while begin < len(line) and line[begin].isspace():
+                        begin += 1
+                    end = begin + 1
+                    while end < len(line) and not line[end].isspace():
+                        end += 1
+                    
+                    key = line[begin:end]
+                    
+                    if key not in self.step_m.keys():
+                        self.step_m[key] = []
+                    step_s = self.step_m[key]
+                    
+                    if len(step_s) == 0:
+                        print("Warning: unmatched step-end")
+                    else:
+                        uuid, step = step_s.pop()
+                        step.status = Status.PASSED
+                        self.reporter.stop_step(uuid, stop=now())
+
             job_log.write(line)
             
         job_log.close()
+        
+        # Close out remaining steps
+        for key in self.step_m.keys():
+            for step_i in self.step_m[key]:
+                step_i[1].status = Status.PASSED
+                self.reporter.stop_step(step_i[0], stop=now())
         
         if proc.wait() == 0:
             test_case.status = Status.PASSED
@@ -98,12 +158,12 @@ class JobWrapper(object):
             test_case.status = Status.FAILED
             
         self.reporter.attach_file(
-            uuid, 
+            test_uuid, 
             "job.log",
             "log")
             
-        test_case.stop=now()            
-        self.reporter.close_test(uuid)
+        test_case.stop=now()
+        self.reporter.close_test(test_uuid)
 #            print("line: %s" % line)
     
     

@@ -38,6 +38,10 @@ def cmd_regress(args):
     
     r = Runner(rundir, specs)
 
+    # TODO: should query the job runner     
+    if args.max_par is not None:
+        r.maxpar = int(args.max_par)
+
     print("--> run " + str(r))
     loop = asyncio.get_event_loop()
     loop.run_until_complete(r.runjobs())
