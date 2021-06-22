@@ -20,7 +20,6 @@ SBY_ENGINES ?= smtbmc:boolector
 
 MKDV_CHECK_TARGET ?= check-sby
 
-SBY_OPTIONS += depth=$(SBY_DEPTH)
 
 else # Rules
 

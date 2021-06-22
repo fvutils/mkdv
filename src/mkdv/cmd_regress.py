@@ -21,7 +21,7 @@ def cmd_regress(args):
                           datetime.now().strftime("%Y%m%d_%H%M%S"))
     gendir = os.path.join(rundir, "gen")
     
-    specs = []
+    specs = jobset_s.jobspecs.copy()
     gen_specs = []    
     # TODO: filter specs
 

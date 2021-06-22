@@ -27,12 +27,6 @@ MKDV_TIMEOUT ?= 1ms
 MKDV_MKFILES_PATH += $(DV_MK_MKFILES_DIR)
 MKDV_INCLUDE_DIR = $(abspath $(DV_MK_MKFILES_DIR)/../include)
 
-
-# PYBFMS_MODULES += wishbone_bfms
-# VLSIM_CLKSPEC += -clkspec clk=10ns
-
-#TOP_MODULE ?= unset
-
 PATH := $(PACKAGES_DIR)/python/bin:$(PATH)
 export PATH
 
@@ -43,6 +37,14 @@ include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 
 PYTHONPATH := $(subst $(eval) ,:,$(MKDV_PYTHONPATH)):$(PYTHONPATH)
 export PYTHONPATH
+
+#********************************************************************
+#* Job parameters are recorded in the job-results database
+#********************************************************************
+MKDV_JOB_PARAMETERS += MKDV_TOOL=$(MKDV_TOOL)
+export MKDV_JOB_PARAMETERS
+
+export MKDV_JOB_TAGS
 
 
 #info :
@@ -74,6 +76,8 @@ endif
 .PHONY: pre-run run post-run
 run : 
 	@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
+	# Save environment variables for inspection
+	@env > job.env
 ifeq (,$(MKDV_MK))
 	$(Q)echo "Error: MKDV_MK is not set"; exit 1
 endif
@@ -114,6 +118,10 @@ post-run : $(MKDV_POST_RUN_TARGETS)
 ifneq (,$(MKDV_TESTS))
 else
 endif	
+
+.PHONY: regress
+regress : 
+	python3 -m mkdv regress $(MKDV_ARGS)
 
 clean-all : $(foreach tool,$(DV_TOOLS),clean-$(tool))
 

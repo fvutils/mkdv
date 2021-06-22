@@ -22,7 +22,9 @@ endif
 ifeq (vlsim,$(MKDV_TOOL))
 
 ifneq (1,$(RULES))
-VLSIM := $(PACKAGES_DIR)/python/bin/vlsim
+VLSIM := python3 -m vlsim
+
+MKDV_PYTHONPATH += $(PACKAGES_DIR)/vlsim/src
 
 MKDV_VL_DEFINES += HAVE_BIND
 
