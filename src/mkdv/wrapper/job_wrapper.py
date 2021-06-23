@@ -68,19 +68,6 @@ class JobWrapper(object):
 
         self.reporter.schedule_test(test_uuid, test_case)
 
-# step1_uuid = uuid4()
-# step = TestStepResult(name="My Step", start=now(), parameters=[])
-# logger.start_step(None, step1_uuid, step)
-# step2_uuid = uuid4()
-# step = TestStepResult(name="My Substep", start=now(), parameters=[])
-# logger.start_step(step1_uuid, step2_uuid, step)
-# logger.stop_step(step2_uuid, stop=now())
-# #logger.stop_step(step1_uuid, stop=now())
-
-#        test_result = self.reporterlogger.get_test(None)
-#        test_result.descriptionHtml = "Hello World"
-
-                
         proc = subprocess.Popen(
             cmdline,
             stdout=subprocess.PIPE,
@@ -161,6 +148,17 @@ class JobWrapper(object):
             test_uuid, 
             "job.log",
             "log")
+        
+        if "attachments" in job.keys():
+            for a in job["attachments"]:
+                name = next(iter(a))
+                path = a[name]
+                
+                self.reporter.attach_file(
+                    test_uuid,
+                    path,
+                    name)
+                
             
         test_case.stop=now()
         self.reporter.close_test(test_uuid)
