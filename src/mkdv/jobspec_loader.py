@@ -263,23 +263,45 @@ class JobspecLoader(object):
     def process_mkdv_mk_test(self, mkdv_mk, fullname, localname, testdesc):
         test = JobSpec(mkdv_mk, fullname, localname)
         self.jobspec_s.jobspecs.append(test)
+
+        if testdesc is not None:       
+            if "variables" in testdesc.keys():
+                variables = testdesc["variables"]
+                if isinstance(variables, list):
+                    for vs in variables:
+                        vk = next(iter(vs))
+                        test.variables[vk] = vs[vk]
+                else:
+                    print("Warning: variables is not a dict: " + str(variables))
+                
+                if len(self.variables_s) > 0:
+                    ov = self.variables_s[-1]
+                
+                    for vk in ov.keys():
+                        test.variables[vk] = ov[vk]
         
-        if testdesc is not None and "variables" in testdesc.keys():
-            variables = testdesc["variables"]
-            if isinstance(variables, list):
-                for vs in variables:
-                    vk = next(iter(vs))
-                    test.variables[vk] = vs[vk]
-            else:
-                print("Warning: variables is not a dict: " + str(variables))
+            if "description" in testdesc.keys():
+                test.description = testdesc["description"]
+            
+            if "labels" in testdesc.keys():
+                for l in testdesc["labels"]:
+                    name = next(iter(l))
+                    value = l[name]
+                    test.labels.add_label(name, value)
+                    
+            if "parameters" in testdesc.keys():
+                for p in testdesc["parameters"]:
+                    name = next(iter(p))
+                    value = p[name]
+
+                    # TODO: format based on Python type?                    
+                    test.add_parameter(name, str(value))
+
+            if "attachments" in testdesc.keys():
+                for a in testdesc["attachments"]:
+                    # Each attachment is a dict of name/path
+                    name = next(iter(a))
+                    path = a[name]
                 
-            if len(self.variables_s) > 0:
-                ov = self.variables_s[-1]
-                
-                for vk in ov.keys():
-                    test.variables[vk] = ov[vk]
-        
-        if testdesc is not None and "description" in testdesc.keys():
-            test.description = testdesc["description"]
-                
+                    test.attachments.append((name, path))
                 

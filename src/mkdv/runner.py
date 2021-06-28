@@ -15,13 +15,14 @@ from colorama import Fore
 from colorama import Style
 from typing import List
 from mkdv.job_queue import JobQueue
+from mkdv.job_spec import JobSpec
 
 class Runner(object):
     
     def __init__(self, root, specs):
         self.root = root
         self.specs = specs
-        self.maxpar = 20
+        self.maxpar = 24
         
     async def runjobs(self):
         loop = asyncio.get_event_loop()
@@ -91,11 +92,13 @@ class Runner(object):
                     name_m[spec.fullname] = id
                 else:
                     name_m[spec.fullname] = 0
-
+                    
                 os.makedirs(rundir, exist_ok=True)
                
 #                cmdline = ['srun', '-E']
-                cmdline = []
+#                cmdline = ['srun', '--nodelist=oatfieldx1,oatfieldx2']
+#                cmdline = ['srun']
+#                cmdline = []
                 cmdline.extend([sys.executable, "-m", "mkdv.wrapper"])
                 cmdline.append(os.path.join(rundir, "job.yaml"))
                 
@@ -186,7 +189,7 @@ class Runner(object):
             self, 
             job_yaml,
             cachedir,
-            spec):
+            spec : JobSpec):
         
         with open(job_yaml, "w") as fp:
             fp.write("job:\n");
@@ -202,7 +205,22 @@ class Runner(object):
             if spec.description is not None:
                 fp.write("    description: |\n")
                 for line in spec.description.split("\n"):
-                    fp.write("        %s\n" % line);
+                    fp.write("        %s\n" % line)
+
+            if len(spec.labels) > 0:
+                fp.write("    labels:\n")
+                for key in spec.labels.keys():
+                    fp.write("        - %s: %s\n" % (key, spec.labels[key]))
+                    
+            if len(spec.parameters) > 0:
+                fp.write("    parameters:\n")
+                for key in spec.parameters.keys():
+                    fp.write("        - %s: %s\n" % (key, spec.parameters[key]))
+
+            if len(spec.attachments) > 0:
+                fp.write("    attachments:\n")
+                for a in spec.attachments:
+                    fp.write("    - %s: %s\n" % (a[0], a[1]))
             
 #            fp.write("    rundir: %s\n" % rundir)spec.mkdv_mk)
 #                 cmdline.append("-f")

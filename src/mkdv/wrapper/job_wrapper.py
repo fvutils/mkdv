@@ -12,7 +12,7 @@ import allure
 import allure_commons
 from allure_commons.logger import AllureFileLogger
 from allure_commons.model2 import TestResult, Status, TestStepResult, Label,\
-    Parameter
+    Parameter, StatusDetails
 from allure_commons.model2 import TestStepResult, TestResult, TestBeforeResult, TestAfterResult
 from allure_commons.reporter import AllureReporter
 from allure_commons.types import LabelType
@@ -63,32 +63,51 @@ class JobWrapper(object):
 
         test_uuid = uuid4()
         test_case = TestResult(uuid=test_uuid, start=now())
-        test_case.name = job["name"]
         test_case.fullname = job["qname"]
         if "description" in job.keys():
             test_case.description = job["description"]
            
 
-        pname = job["qname"][0:-(len(job["name"])+1)]
+#        pname = job["qname"][0:-(len(job["name"])+1)]
+#        elems = pname.split('.')
+        elems = qname.split('.')
         
-        elems = pname.split('.')
-        
-        if len(elems) > 3:
+        if len(elems) > 4:
             # When we more elements in the qualified name than
             # will fit in the PARENT::SUITE::SUBSUITE scheme.
             #
             # We do a bit of middle compression to maximize 
             # readability. 
-            test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=elems[0]))
+
+            collapse_root = True
             
-            test_case.labels.append(Label(name=LabelType.SUITE, value=elems[1]))
+            if collapse_root:
+                # Collapse leaf elements
             
-            subsuite = ""
-            for i,e in enumerate(elems[2:]):
-                if i > 0:
-                    subsuite += "."
-                subsuite += e
-            test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=subsuite))
+            
+                root = ""
+                for i,e in enumerate(elems[:-4]):
+                    if i > 0:
+                        root += "."
+                    root += e
+
+#                print("root=%s suite=%s sub_suite=%s" % (root, elems[-3], elems[-2]))
+                test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=root))
+                test_case.labels.append(Label(name=LabelType.SUITE, value=elems[-3]))
+                test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[-2]))
+                test_case.name = elems[-1]
+            else:
+                # Collapse leaf elements
+                test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=elems[0]))
+                test_case.labels.append(Label(name=LabelType.SUITE, value=elems[1]))
+                test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[2]))
+            
+                subsuite = ""
+                for i,e in enumerate(elems[3:]):
+                    if i > 0:
+                        subsuite += "."
+                    subsuite += e
+                test_case.name = subsuite
         else:
             test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=elems[0]))
             
@@ -97,9 +116,10 @@ class JobWrapper(object):
                 
             if len(elems) > 2:
                 test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[2]))
+            test_case.name = job["name"]
 
-        test_case.labels.append(Label(name=LabelType.TAG, value="MyLabel1"))
-        test_case.labels.append(Label(name=LabelType.TAG, value="MyLabel2"))
+#        test_case.labels.append(Label(name=LabelType.TAG, value="MyLabel1"))
+#        test_case.labels.append(Label(name=LabelType.TAG, value="MyLabel2"))
         
         self.reporter.schedule_test(test_uuid, test_case)
 
@@ -114,7 +134,7 @@ class JobWrapper(object):
                 break
            
             line = line.decode()
-            if line[0] == '@' and line.startswith("@step"):
+            if line[0] == '@': # and line.startswith("@step"):
                 if line.startswith("@step-begin"):
                     begin = len("@step-begin")
                     end = -1
@@ -138,6 +158,8 @@ class JobWrapper(object):
                     uuid = uuid4()
 
                     step = TestStepResult(name=line[end+1:])
+                    # Mark failed until we get confirmation of the step ending
+                    step.status = Status.FAILED
                     step_s.append((uuid, step))
                     self.reporter.start_step(parent_uuid, uuid, step)
                   
@@ -163,7 +185,38 @@ class JobWrapper(object):
                         uuid, step = step_s.pop()
                         step.status = Status.PASSED
                         self.reporter.stop_step(uuid, stop=now())
-
+                elif line.startswith("@fatal"):
+                    begin = len("@fatal")
+                    end = -1
+                    
+                    while begin < len(line) and line[begin].isspace():
+                        begin += 1
+                    end = begin + 1
+                    while end < len(line) and not line[end].isspace():
+                        end += 1
+                    
+                    key = line[begin:end]
+                    
+#                     if key in self.step_m.keys():
+#                         # Add this message to the relevant step
+#                         uuid, step = step_s[-1]
+#                         if step.statusDetails is None:                        
+#                             step.statusDetails = StatusDetails(message=line[end+1:])
+#                         else:
+#                             step.statusDetails.message += "\n" + line[end+1:]
+#                     else:
+#                         # Add to the test status itself
+#                         if test_case.statusDetails is None:
+#                             test_case.statusDetails = StatusDetails(message=line[len("@fatal"):])
+#                         else:
+#                             test_case.statusDetails.message += "\n" + line[len("@fatal"):]
+                            
+                    # Add to the test status itself
+                    if test_case.statusDetails is None:
+                        test_case.statusDetails = StatusDetails(message=line[len("@fatal"):])
+                    else:
+                        test_case.statusDetails.message += "\n" + line[len("@fatal"):]
+                            
             job_log.write(line)
             
         job_log.close()
@@ -171,7 +224,7 @@ class JobWrapper(object):
         # Close out remaining steps
         for key in self.step_m.keys():
             for step_i in self.step_m[key]:
-                step_i[1].status = Status.PASSED
+#                step_i[1].status = Status.PASSED
                 self.reporter.stop_step(step_i[0], stop=now())
         
         if proc.wait() == 0:
@@ -211,6 +264,19 @@ class JobWrapper(object):
         test_case.labels.append(Label(name=LabelType.FRAMEWORK, value=tool))
         test_case.labels.append(Label(name=LabelType.HOST, value=socket.gethostname()))
 
+        # Add labels coming through the test description        
+        if "labels" in job.keys() and job["labels"] is not None:
+            for l in job["labels"]:
+                name = next(iter(l))
+                val = l[name]
+                test_case.labels.append(Label(name=name, value=val))
+                
+        if "parameters" in job.keys() and job["parameters"] is not None:
+            for p in job["parameters"]:
+                name = next(iter(p))
+                val = p[name]
+                test_case.parameters.append(Parameter(name=name, value=val))
+
         if "MKDV_JOB_PARAMETERS" in env.keys():
             params = env["MKDV_JOB_PARAMETERS"]
             
@@ -235,9 +301,11 @@ class JobWrapper(object):
         
             
         self.reporter.attach_file(
-            test_uuid, 
+            uuid4(), 
             "job.log",
             "log")
+        
+            
         
         if "attachments" in job.keys():
             for a in job["attachments"]:
@@ -245,7 +313,7 @@ class JobWrapper(object):
                 path = a[name]
                 
                 self.reporter.attach_file(
-                    test_uuid,
+                    uuid4(),
                     path,
                     name)
                 

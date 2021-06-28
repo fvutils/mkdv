@@ -27,6 +27,10 @@ VLOG_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
 VSIM_OPTIONS += $(foreach vpi,$(VPI_LIBS),-pli $(vpi))
 VSIM_OPTIONS += $(foreach dpi,$(DPI_LIBS),-sv_lib $(dpi))
 
+ifeq (1,$(DEBUG))
+VSIM_OPTIONS += -qwavedb=+report=class+signal+memory
+endif
+
 MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/work
 
 else # Rules
@@ -44,7 +48,6 @@ run-questa : $(MKDV_RUN_DEPS)
 	vmap work $(MKDV_CACHEDIR)/work
 	vsim -batch -do "run $(MKDV_TIMEOUT); quit -f" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
-		-qwavedb=+report=class+signal+memory \
 		$(MKDV_RUN_ARGS)
 
 endif

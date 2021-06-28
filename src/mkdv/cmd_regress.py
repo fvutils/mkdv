@@ -30,10 +30,8 @@ def cmd_regress(args):
         os.makedirs(spec_gendir)
         gen_jobset_s = JobSpecGenLoader(spec_gendir).load(s)
 
-        print("jobspecs: " + str(gen_jobset_s.jobspecs))
         specs.extend(gen_jobset_s.jobspecs)
-
-    
+        
     os.makedirs(rundir, exist_ok=True)
     
     r = Runner(rundir, specs)

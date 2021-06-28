@@ -12,7 +12,9 @@ job:
         # Heading
         *em*
         More text
-        
+    attachments:
+      - key: path
+
    
    
       

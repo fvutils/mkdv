@@ -53,7 +53,6 @@ class JobSpecGenLoader(object):
             specfile=os.path.join(self.rundir, spec.path),
             dflt_mkdv_mk=spec.mkdv_mk,
             prefix=spec.root_id)
-        print("jobset_s=" + str(jobset_s))
 
         return jobset_s        
         
