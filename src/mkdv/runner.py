@@ -98,7 +98,7 @@ class Runner(object):
 #                cmdline = ['srun', '-E']
 #                cmdline = ['srun', '--nodelist=oatfieldx1,oatfieldx2']
 #                cmdline = ['srun']
-#                cmdline = []
+                cmdline = []
                 cmdline.extend([sys.executable, "-m", "mkdv.wrapper"])
                 cmdline.append(os.path.join(rundir, "job.yaml"))
                 
