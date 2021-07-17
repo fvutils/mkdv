@@ -13,10 +13,12 @@ class JobSpec(object):
         self.localname = localname
         self.description = None
         self.rundir = None
+        self.cachedir = None
         self.variables = {}
         self.attachments : List[Tuple[str, str]] = []
         self.parameters : Dict[str,str] = {}
         self.labels : Dict[str,str] = {}
+        self.rerun = False
         
     def append_run_variables(self, cmdline):
         """Append job variables to command-line list"""

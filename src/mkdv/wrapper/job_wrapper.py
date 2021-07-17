@@ -134,6 +134,7 @@ class JobWrapper(object):
                 break
            
             line = line.decode()
+            line_s = line.strip()
             if line[0] == '@': # and line.startswith("@step"):
                 if line.startswith("@step-begin"):
                     begin = len("@step-begin")
@@ -216,7 +217,13 @@ class JobWrapper(object):
                         test_case.statusDetails = StatusDetails(message=line[len("@fatal"):])
                     else:
                         test_case.statusDetails.message += "\n" + line[len("@fatal"):]
-                            
+            elif line_s.startswith("Exception:"):
+                # Save the exception
+                if test_case.statusDetails is None:
+                    test_case.statusDetails = StatusDetails(message=line)
+                else:
+                    test_case.statusDetails.message += "\n" + line
+                                
             job_log.write(line)
             
         job_log.close()

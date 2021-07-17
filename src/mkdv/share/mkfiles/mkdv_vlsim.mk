@@ -28,13 +28,11 @@ MKDV_PYTHONPATH += $(PACKAGES_DIR)/vlsim/src
 
 MKDV_VL_DEFINES += HAVE_BIND
 
-ifneq (,$(DEBUG))
+ifeq (1,$(MKDV_DEBUG))
 VLSIM_OPTIONS += --trace-fst
 SIMV_ARGS += +vlsim.trace
-#SIMV = $(MKDV_CACHEDIR)/simv.debug
 SIMV = simv.debug
 else
-#SIMV = $(MKDV_CACHEDIR)/simv.ndebug
 SIMV = simv.ndebug
 endif
 
@@ -49,7 +47,9 @@ SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
 SIMV_ARGS += +vlsim.timeout=$(MKDV_TIMEOUT)
 SIMV_ARGS += $(MKDV_RUN_ARGS)
 
-MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/$(SIMV)
+# Always build both images
+MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.debug
+MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.ndebug
 
 else # Rules
 

@@ -22,7 +22,8 @@ class Runner(object):
     def __init__(self, root, specs):
         self.root = root
         self.specs = specs
-        self.maxpar = 24
+        self.maxpar = 10
+        self.rerun_failing = True
         
     async def runjobs(self):
         loop = asyncio.get_event_loop()
@@ -33,6 +34,8 @@ class Runner(object):
         cache_id = 0
         n_passed = 0
         n_failed = 0
+        
+        self.maxpar = 10
 
         # Map of mkdv.mk path -> job_queue        
         queue_m = {}
@@ -48,7 +51,19 @@ class Runner(object):
             
         active_queues = list(queue_m.values())
         
+        
         status = await self.run_builds(active_queues)
+
+        # Propagate the cachedir        
+        for q in active_queues:
+            for j in q.jobs:
+                j.cachedir = q.cachedir
+        
+        # Shove everything back in a single queue
+        run_q = []
+        
+        for q in active_queues:
+            run_q.extend(q.jobs)
         
         if not status:
             return
@@ -60,94 +75,54 @@ class Runner(object):
         else:
             # Launch everything
             avail_jobs = len(self.specs)
+        print("maxpar: %d %d" % (self.maxpar, avail_jobs))
 
-        # Start         
-        spec_i = 0
-        queue_i = 0
-#        print("spec_i=" + str(spec_i) + " " + str(len(self.specs)))
-        while spec_i < len(self.specs) or len(active_procs) > 0:
-#            print("spec_i=" + str(spec_i) + " " + str(len(self.specs)))
-
+        while len(run_q) > 0 or len(active_procs) > 0:
 
             # Launch new jobs while there is quota 
             # and            
-            while avail_jobs > 0 and spec_i < len(self.specs):
-                # Select a spec from one of the queues
-                queue = active_queues[queue_i]
-                spec = queue.jobs.pop()
-                
-                if len(queue.jobs) == 0:
-                    active_queues.pop(queue_i)
+            while len(active_procs) < avail_jobs and len(run_q) > 0:
+                # TODO: could randomize selection
+                spec = run_q.pop(0)
 
-                if len(active_queues) != 0:
-                    queue_i = (queue_i+1) % len(active_queues)
-                else:
-                    queue_i = 0
-                
-                rundir = os.path.join(self.root, spec.fullname)
-                if spec.fullname in name_m.keys():
-                    # Need to disambiguate
-                    id = name_m[spec.fullname]+1
-                    rundir += "_%04d" % (id,)
-                    name_m[spec.fullname] = id
-                else:
-                    name_m[spec.fullname] = 0
+                if spec.rundir is None:
+                    rundir = os.path.join(self.root, spec.fullname)
+                    if spec.fullname in name_m.keys():
+                        # Need to disambiguate
+                        id = name_m[spec.fullname]+1
+                        rundir += "_%04d" % (id,)
+                        name_m[spec.fullname] = id
+                    else:
+                        name_m[spec.fullname] = 0
                     
-                os.makedirs(rundir, exist_ok=True)
+                    spec.rundir = rundir
+                    
+                os.makedirs(spec.rundir, exist_ok=True)
                
 #                cmdline = ['srun', '-E']
 #                cmdline = ['srun', '--nodelist=oatfieldx1,oatfieldx2']
 #                cmdline = ['srun']
-#                cmdline = []
+                cmdline = []
                 cmdline.extend([sys.executable, "-m", "mkdv.wrapper"])
                 cmdline.append(os.path.join(rundir, "job.yaml"))
                 
                 self.write_job_yaml(
                     os.path.join(rundir, "job.yaml"),
-                    queue.cachedir,
+                    spec.cachedir,
                     spec)
 
-#                 cmdline = ["make"]
-#                 cmdline.append("-f")
-#                 cmdline.append(spec.mkdv_mk)
-#                 cmdline.append("MKDV_RUNDIR=" + rundir)
-#                 cmdline.append("MKDV_CACHEDIR=" + queue.cachedir)
-#                 cmdline.append("MKDV_TEST=" + spec.localname)
-#                 cmdline.append("MKDV_JOB=" + spec.localname)
-#                 cmdline.append("MKDV_JOB_QNAME=" + spec.fullname)
-#                 cmdline.append("MKDV_JOB_PARENT=" + spec.fullname[0:-(len(spec.localname)+1)])
-#                 for v in spec.variables.keys():
-#                     cmdline.append(v + "=" + str(spec.variables[v]))
-# #                cmdline.append("MKDV_TEST=" + spec.localname)
-#                 # TODO: separate build/run
-#                 cmdline.append("run")
-                spec.rundir = rundir
-# 
-#                 stdout = open(os.path.join(rundir, "stdout.log"), "w")
-# #                stdout = DEVNULL
-# #                stdout = None
-#                 
-# #                print("cmdline: " + str(cmdline))                
-                print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} " + spec.fullname)
+                if spec.rerun:
+                    print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s (rerun)" % spec.fullname)
+                else:
+                    print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s" % spec.fullname)
                 sys.stdout.flush()
-#                 proc = await asyncio.subprocess.create_subprocess_exec(
-#                     *cmdline,
-#                     cwd=rundir,
-#                     stderr=STDOUT,
-#                     stdout=stdout)
 
                 proc = await asyncio.subprocess.create_subprocess_exec(
                     *cmdline,
-                    cwd=rundir)
+                    cwd=spec.rundir)
                 
-#                print("proc=" + str(proc))
-                
-#                active_procs.append((proc,spec,stdout))
                 active_procs.append((proc,spec,None))
                 
-                spec_i += 1
-                avail_jobs -= 1
-            
             # Wait for at least once job to complete            
             done, pending = await asyncio.wait(
                 [loop.create_task(p[0].wait()) for p in active_procs],
@@ -163,6 +138,8 @@ class Runner(object):
                 else:
                     if p[2] is not None:
                         p[2].close() # Close stdout save
+
+                    spec = p[1]                        
                     if os.path.isfile(os.path.join(p[1].rundir, "status.txt")):
                         is_passed,msg = self.checkstatus(os.path.join(p[1].rundir, "status.txt"))
                         
@@ -171,13 +148,22 @@ class Runner(object):
                             n_passed += 1
                         else:
                             print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
+                            
+                            if self.rerun_failing:
+                                # Determine whether we need to rerun with debug
+                                if not "MKDV_DEBUG" in spec.variables.keys() or spec.variables["MKDV_DEBUG"] != "1":
+                                    print(f"{Fore.YELLOW}[QueueDebugRerun]{Style.RESET_ALL} " + spec.fullname)
+                                    spec.variables["MKDV_DEBUG"] = "1"
+                                    # Add a '_dbg' suffix
+                                    spec.rundir += "_dbg"
+                                    spec.rerun = True
+                                    run_q.insert(0, spec)
                             n_failed += 1
                         pass
                     else:
                         print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - no status.txt")
                         n_failed += 1
                     sys.stdout.flush()
-                    avail_jobs += 1
 
         print()                    
         print()                    
