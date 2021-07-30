@@ -25,7 +25,7 @@ MKDV_VL_DEFINES += HAVE_BIND
 VLOG_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
 VLOG_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
 VSIM_OPTIONS += $(foreach vpi,$(VPI_LIBS),-pli $(vpi))
-VSIM_OPTIONS += $(foreach dpi,$(DPI_LIBS),-sv_lib $(dpi))
+VSIM_OPTIONS += $(foreach dpi,$(basename $(DPI_LIBS)),-sv_lib $(dpi))
 
 ifeq (1,$(MKDV_DEBUG))
 VSIM_OPTIONS += -qwavedb=+report=class+signal+memory
