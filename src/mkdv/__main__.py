@@ -49,6 +49,8 @@ def get_parser():
         help="Discovers and lists available tests")
     list_cmd.add_argument("-s", "--job-spec", dest="jobspec",
         help="Specifies the job-spec file (mkdv.yaml by default)")
+    list_cmd.add_argument("-c", "--job-categories", dest="categories",
+        action="store_true", help="Show job categories, not individual jobs")
     list_cmd.set_defaults(func=cmd_list)
     
     mkfile_cmd = subparser.add_parser("mkfile",
@@ -62,6 +64,12 @@ def get_parser():
         help="Specifies a file containing a test-spec to use")
     regress_cmd.add_argument("-j", "--max-par", dest="max_par",
         help="Specifies maximum jobs to run in parallel")
+    regress_cmd.add_argument("-e", "--exclude", dest="exclude",
+        action="append", 
+        help="Specifies test patterns to exclude from the runlist")
+    regress_cmd.add_argument("-i", "--include", dest="include",
+        action="append", 
+        help="Specifies test patterns to include in the runlist")
     regress_cmd.set_defaults(func=cmd_regress)
     
     run_cmd = subparser.add_parser("run",

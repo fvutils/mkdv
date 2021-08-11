@@ -20,7 +20,7 @@ class JobspecLoader(object):
         
         self.jobspec_s = None
         self.dflt_mkdv_mk = None
-        self.debug = 1
+        self.debug = 0
         pass
     
     def load(self, 
@@ -133,7 +133,8 @@ class JobspecLoader(object):
                 print("testkey: %s" % str(testkey))
                 
             prefix = self.prefix_s[-1]
-            print("prefix: " + str(prefix))
+            if self.debug > 0:
+                print("prefix: " + str(prefix))
             if prefix is not None:
                 testname = prefix + "." + testkey
             else:
@@ -141,7 +142,8 @@ class JobspecLoader(object):
                     testname = os.path.basename(dir) + "." + testkey
                 else:
                     testname = testkey
-            print("testname: " + str(testname))
+            if self.debug > 0:
+                print("testname: " + str(testname))
                         
             testdesc = j[testkey]
                 

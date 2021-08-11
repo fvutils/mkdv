@@ -119,6 +119,18 @@ ifneq (,$(MKDV_TESTS))
 else
 endif	
 
+.PHONY: help
+help :
+	@echo "mkdv.mk"
+	@echo "    Targets:"
+	@echo "        list    - list available tests"
+	@echo "        regress - run a regression"
+	@echo "    Note: pass arguments via MKDV_ARGS variable"
+
+.PHONY: list
+list :
+	python3 -m mkdv list $(MKDV_ARGS)
+
 .PHONY: regress
 regress : 
 	python3 -m mkdv regress $(MKDV_ARGS)
@@ -128,12 +140,6 @@ clean-all : $(foreach tool,$(DV_TOOLS),clean-$(tool))
 clean : 
 	rm -rf rundir cache
 
-help : help-$(TOOL)
-
-help-all : 
-	@echo "dv-mk help."
-	@echo "Available tools: $(DV_TOOLS)"
-	
 
 include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 
