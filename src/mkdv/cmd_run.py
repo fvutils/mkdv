@@ -5,12 +5,17 @@ Created on Feb 20, 2021
 '''
 import asyncio
 import os
+import sys
 
+from colorama import Fore
+from colorama import Style
+
+from mkdv.job_spec_set import JobSpecSet
 from mkdv.jobspec_loader import JobspecLoader
 
 
 def cmd_run(args):
-    specs = []
+    specs = None
     
     cwd = os.getcwd()
     
@@ -19,34 +24,31 @@ def cmd_run(args):
 
     spec = None
         
-    if hasattr(args, "jobid") and args.jobid is not None:
-        # Need to load job-specs
-        
-        specfile = None
-        if hasattr(args, "jobspec") and args.jobspec is not None:
-            specfile = os.path.abspath(args.jobspec)
-        
-            if not os.path.exists(specfile):
-                raise Exception("Specfile " + specfile + " doesn't exist")
+    specfile = None
+    if hasattr(args, "jobspec") and args.jobspec is not None:
+        specfile = os.path.abspath(args.jobspec)
+     
+        if not os.path.exists(specfile):
+            raise Exception("Specfile " + specfile + " doesn't exist")
+    else:
+        if os.path.exists(os.path.join(os.getcwd(), "mkdv.yaml")):
+            specfile = os.path.join(os.getcwd(), "mkdv.yaml")
         else:
-            if os.path.exists(os.path.join(os.getcwd(), "mkdv.yaml")):
-                specfile = os.path.join(os.getcwd(), "mkdv.yaml")
-            else:
-                raise Exception("Default specfile " + specfile + " doesn't exist")        
-        
-        loader = JobspecLoader()
-        specs = loader.load(
-            os.path.dirname(specfile),
-            specfile)
-            
-        spec_m = {}
-        for s in specs:
-            spec_m[s.fullname] = s
-                
-        if args.jobid in spec_m.keys():
-            spec = spec_m[args.jobid]
-        else:
-            raise Exception("Job-id " + args.jobid + " doesn't exist")
+            raise Exception("Default specfile " + specfile + " doesn't exist")        
+      
+    loader = JobspecLoader()
+    specs : JobSpecSet = loader.load(
+        os.path.dirname(specfile),
+         specfile)
+    
+    spec_m = {}
+    for s in specs.jobspecs:
+        spec_m[s.fullname] = s
+              
+    if args.jobid in spec_m.keys():
+        spec = spec_m[args.jobid]
+    else:
+        raise Exception("Job-id " + args.jobid + " doesn't exist")
             
     print("spec=" + str(spec))
     
@@ -67,9 +69,10 @@ def cmd_run(args):
     
     # TODO: Add variables if spec
 
-    cmdline.append("run")
+    cmdline.append("_setup")
 
-    print("--> run")
+    print(f"{Fore.YELLOW}[Start Setup]{Style.RESET_ALL}")
+    sys.stdout.flush()
     loop = asyncio.get_event_loop()    
     proc = loop.run_until_complete(
         asyncio.subprocess.create_subprocess_exec(*cmdline))
@@ -77,9 +80,32 @@ def cmd_run(args):
     done,pending = loop.run_until_complete(
         asyncio.wait([loop.create_task(proc.wait())]))
 
+    if proc.returncode == 0:
+        print(f"{Fore.GREEN}[Setup PASS]{Style.RESET_ALL}")
+    else:
+        print(f"{Fore.RED}[Setup FAIL]{Style.RESET_ALL} -- exit code " + str(proc.returncode))
+        return proc.returncode
+        
+    cmdline.pop()
+    cmdline.append("_run")
+    
+    print(f"{Fore.YELLOW}[Start Run]{Style.RESET_ALL}")
+    sys.stdout.flush()
+    loop = asyncio.get_event_loop()    
+    proc = loop.run_until_complete(
+        asyncio.subprocess.create_subprocess_exec(*cmdline))
+    
+    done,pending = loop.run_until_complete(
+        asyncio.wait([loop.create_task(proc.wait())]))
+    print("<-- run")
+
+    if proc.returncode == 0:
+        print(f"{Fore.GREEN}[Run PASS]{Style.RESET_ALL}")
+    else:
+        print(f"{Fore.RED}[Run FAIL]{Style.RESET_ALL} -- exit code " + str(proc.returncode))
+        
     return proc.returncode
         
-    print("<-- run")
 #    loop = asyncio.get_event_loop()    
     
 #    loader = TestLoader()

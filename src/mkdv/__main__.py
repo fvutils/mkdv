@@ -81,8 +81,7 @@ def get_parser():
         help="Run in debug mode")
     run_cmd.add_argument("-s", "--job-spec", dest="jobspec",
         help="Specifies the job-spec file (mkdv.yaml by default)")
-    run_cmd.add_argument("-j", "--job-id", dest="jobid",
-        help="Specifies job-id to run.")
+    run_cmd.add_argument("jobid", help="Specifies job-id to run.")
     run_cmd.set_defaults(func=cmd_run)
     
     return parser

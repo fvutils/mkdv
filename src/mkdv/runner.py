@@ -255,14 +255,14 @@ class Runner(object):
                 cmdline.append("MKDV_RUNDIR=" + job.cachedir)
                 cmdline.append("MKDV_CACHEDIR=" + job.cachedir)
                 # TODO: separate build/run
-                cmdline.append("build")
+                cmdline.append("_setup")
 
                 stdout = open(os.path.join(job.cachedir, "stdout.log"), "w")
 #                stdout = DEVNULL
 #                stdout = None
                 
 #                print("cmdline: " + str(cmdline))                
-                print(f"{Fore.YELLOW}[Start Build]{Style.RESET_ALL} " + job.mkdv_mk)
+                print(f"{Fore.YELLOW}[Start Setup]{Style.RESET_ALL} " + job.mkdv_mk)
                 sys.stdout.flush()
                 proc = await asyncio.subprocess.create_subprocess_exec(
                     *cmdline,
@@ -291,10 +291,10 @@ class Runner(object):
                 else:
                     p[2].close() # Close stdout save
                     if p[0].returncode == 0:
-                        print(f"{Fore.GREEN}[Build PASS]{Style.RESET_ALL} " + p[1].mkdv_mk)
+                        print(f"{Fore.GREEN}[Setup PASS]{Style.RESET_ALL} " + p[1].mkdv_mk)
                     else:
                         build_fails += 1
-                        print(f"{Fore.RED}[Build FAIL]{Style.RESET_ALL} " + p[1].mkdv_mk + " -- exit code " + str(p[0].returncode))
+                        print(f"{Fore.RED}[Setup FAIL]{Style.RESET_ALL} " + p[1].mkdv_mk + " -- exit code " + str(p[0].returncode))
                     sys.stdout.flush()
                     avail_jobs += 1        
                     
