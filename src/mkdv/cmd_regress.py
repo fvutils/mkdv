@@ -10,6 +10,7 @@ import os
 from .runner import Runner
 from mkdv.jobspec_loader import JobspecLoader
 from mkdv.job_spec_gen_loader import JobSpecGenLoader
+from mkdv import backends
 
 
 def cmd_regress(args):
@@ -34,7 +35,9 @@ def cmd_regress(args):
         
     os.makedirs(rundir, exist_ok=True)
     
-    r = Runner(rundir, specs)
+    backend = backends.backend(args.backend)
+    
+    r = Runner(rundir, backend, specs)
 
     # TODO: should query the job runner     
     if args.max_par is not None:

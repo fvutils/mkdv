@@ -5,6 +5,7 @@ Created on Dec 30, 2020
 '''
 
 import asyncio
+import datetime
 import multiprocessing
 import os
 import subprocess
@@ -19,13 +20,15 @@ from mkdv.job_spec import JobSpec
 
 class Runner(object):
     
-    def __init__(self, root, specs):
+    def __init__(self, root, backend, specs):
         self.root = root
+        self.backend = backend
         self.specs = specs
-        self.maxpar = 10
+        self.maxpar = -1
         self.rerun_failing = True
         
     async def runjobs(self):
+        start = datetime.datetime.now()
         loop = asyncio.get_event_loop()
         
         # Ensure each test has a unique name
@@ -35,8 +38,6 @@ class Runner(object):
         n_passed = 0
         n_failed = 0
         
-        self.maxpar = 10
-
         # Map of mkdv.mk path -> job_queue        
         queue_m = {}
 
@@ -70,11 +71,11 @@ class Runner(object):
         
         active_procs = []
 
-        if self.maxpar > 0:
-            avail_jobs = self.maxpar
+        if self.maxpar == -1:
+            avail_jobs = self.backend.quota()
         else:
-            # Launch everything
-            avail_jobs = len(self.specs)
+            avail_jobs = self.maxpar
+            
         print("maxpar: %d %d" % (self.maxpar, avail_jobs))
 
         while len(run_q) > 0 or len(active_procs) > 0:
@@ -117,8 +118,11 @@ class Runner(object):
                     print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s" % spec.fullname)
                 sys.stdout.flush()
 
-                proc = await asyncio.subprocess.create_subprocess_exec(
-                    *cmdline,
+#                proc = await asyncio.subprocess.create_subprocess_exec(
+#                    *cmdline,
+#                    cwd=spec.rundir)
+                proc = await self.backend.launch(
+                    cmdline,
                     cwd=spec.rundir)
                 
                 active_procs.append((proc,spec,None))
@@ -147,7 +151,12 @@ class Runner(object):
                             print(f"{Fore.GREEN}[PASS]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
                             n_passed += 1
                         else:
-                            print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
+                            if spec.rerun:
+                                print(f"{Fore.YELLOW}[ExpFail]{Style.RESET_ALL} " + p[1].fullname + " - " + msg + " (rerun)")
+                            else:
+                                print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
+                                # Number of failures shouldn't be bumped for re-runs
+                                n_failed += 1
                             
                             if self.rerun_failing:
                                 # Determine whether we need to rerun with debug
@@ -158,18 +167,22 @@ class Runner(object):
                                     spec.rundir += "_dbg"
                                     spec.rerun = True
                                     run_q.insert(0, spec)
-                            n_failed += 1
                         pass
                     else:
                         print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - no status.txt")
                         n_failed += 1
                     sys.stdout.flush()
 
+        end = datetime.datetime.now()
+        duration = end - start
         print()                    
         print()                    
         print(f"{Fore.YELLOW}[Run ]{Style.RESET_ALL} " + str(n_passed+n_failed))
         print(f"{Fore.GREEN}[Pass]{Style.RESET_ALL} " + str(n_passed))
         print(f"{Fore.RED}[Fail]{Style.RESET_ALL} " + str(n_failed))
+        tv = str(duration)
+        tv = tv[0:tv.rfind('.')]
+        print(f"{Fore.YELLOW}[Time]{Style.RESET_ALL} %s" % tv)
         
     def write_job_yaml(
             self, 
@@ -184,6 +197,10 @@ class Runner(object):
             fp.write("    reportdir: %s\n" % os.path.join(self.root, "report"))
             fp.write("    name: %s\n" % spec.localname)
             fp.write("    qname: %s\n" % spec.fullname)
+            if spec.rerun:
+                fp.write("    rerun: true\n")
+            else:
+                fp.write("    rerun: false\n")
             if len(spec.variables) > 0:
                 fp.write("    variables:\n")
                 for v in spec.variables.keys():

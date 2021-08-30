@@ -32,6 +32,7 @@ class JobWrapper(object):
         allure_commons.plugin_manager.register(self.file_logger)
 
         self.reporter = AllureReporter()
+        self.step_stream_m = Dict[str, List]
         self.step_m : Dict[str, List[Tuple[str,TestStepResult]]] = {}
 
 
@@ -50,7 +51,9 @@ class JobWrapper(object):
         cmdline.append("MKDV_JOB=%s" % localname)
         cmdline.append("MKDV_JOB_QNAME=%s" % qname)
         cmdline.append("MKDV_JOB_PARENT=" + qname[0:-(len(localname)+1)])
-    
+
+        rerun = job["rerun"]
+
         if "variables" in job.keys():
             variables = job["variables"]
             for v in variables.keys():
@@ -61,11 +64,15 @@ class JobWrapper(object):
                 
         job_log = open("job.log", "w")
 
-        test_uuid = uuid4()
-        test_case = TestResult(uuid=test_uuid, start=now())
-        test_case.fullname = job["qname"]
-        if "description" in job.keys():
-            test_case.description = job["description"]
+        # We don't record job re-runs
+        if not rerun:
+            test_uuid = uuid4()
+            test_case = TestResult(uuid=test_uuid, start=now())
+            test_case.fullname = job["qname"]
+            if "description" in job.keys():
+                test_case.description = job["description"]
+        else:
+            test_case = None
            
 
 #        pname = job["qname"][0:-(len(job["name"])+1)]
@@ -92,36 +99,39 @@ class JobWrapper(object):
                     root += e
 
 #                print("root=%s suite=%s sub_suite=%s" % (root, elems[-3], elems[-2]))
-                test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=root))
-                test_case.labels.append(Label(name=LabelType.SUITE, value=elems[-3]))
-                test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[-2]))
-                test_case.name = elems[-1]
+                if test_case is not None:
+                    test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=root))
+                    test_case.labels.append(Label(name=LabelType.SUITE, value=elems[-3]))
+                    test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[-2]))
+                    test_case.name = elems[-1]
             else:
                 # Collapse leaf elements
-                test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=elems[0]))
-                test_case.labels.append(Label(name=LabelType.SUITE, value=elems[1]))
-                test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[2]))
+                if test_case is not None:
+                    test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=elems[0]))
+                    test_case.labels.append(Label(name=LabelType.SUITE, value=elems[1]))
+                    test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[2]))
             
                 subsuite = ""
                 for i,e in enumerate(elems[3:]):
                     if i > 0:
                         subsuite += "."
                     subsuite += e
-                test_case.name = subsuite
+                if test_case is not None:
+                    test_case.name = subsuite
         else:
-            test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=elems[0]))
+            if test_case is not None:
+                test_case.labels.append(Label(name=LabelType.PARENT_SUITE, value=elems[0]))
             
-            if len(elems) > 1:
-                test_case.labels.append(Label(name=LabelType.SUITE, value=elems[1]))
+                if len(elems) > 1:
+                    test_case.labels.append(Label(name=LabelType.SUITE, value=elems[1]))
                 
-            if len(elems) > 2:
-                test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[2]))
-            test_case.name = job["name"]
+                if len(elems) > 2:
+                    test_case.labels.append(Label(name=LabelType.SUB_SUITE, value=elems[2]))
+                test_case.name = job["name"]
 
-#        test_case.labels.append(Label(name=LabelType.TAG, value="MyLabel1"))
-#        test_case.labels.append(Label(name=LabelType.TAG, value="MyLabel2"))
-        
-        self.reporter.schedule_test(test_uuid, test_case)
+
+        if test_case is not None:
+            self.reporter.schedule_test(test_uuid, test_case)
 
         proc = subprocess.Popen(
             cmdline,
@@ -147,22 +157,23 @@ class JobWrapper(object):
                         end += 1
                     
                     key = line[begin:end]
-                    
-                    if key not in self.step_m.keys():
-                        root = TestStepResult(name=key)
-                        uuid = uuid4()
-                        self.reporter.start_step(None, uuid, root)
-                        self.step_m[key] = [(uuid, root)]
-                    step_s = self.step_m[key]
-                   
-                    parent_uuid = None if len(step_s) == 0 else step_s[-1][0]
-                    uuid = uuid4()
 
-                    step = TestStepResult(name=line[end+1:])
-                    # Mark failed until we get confirmation of the step ending
-                    step.status = Status.FAILED
-                    step_s.append((uuid, step))
-                    self.reporter.start_step(parent_uuid, uuid, step)
+                    if test_case is not None:
+                        if key not in self.step_m.keys():
+                            root = TestStepResult(name=key)
+                            uuid = uuid4()
+                            self.reporter.start_step(None, uuid, root)
+                            self.step_m[key] = [(uuid, root)]
+                        step_s = self.step_m[key]
+                   
+                        parent_uuid = None if len(step_s) == 0 else step_s[-1][0]
+                        uuid = uuid4()
+
+                        step = TestStepResult(name=line[end+1:])
+                        # Mark failed until we get confirmation of the step ending
+                        step.status = Status.FAILED
+                        step_s.append((uuid, step))
+                        self.reporter.start_step(parent_uuid, uuid, step)
                   
                 elif line.startswith("@step-end"):
                     begin = len("@step-end")
@@ -176,16 +187,17 @@ class JobWrapper(object):
                     
                     key = line[begin:end]
                     
-                    if key not in self.step_m.keys():
-                        self.step_m[key] = []
-                    step_s = self.step_m[key]
+                    if test_case is not None:
+                        if key not in self.step_m.keys():
+                            self.step_m[key] = []
+                        step_s = self.step_m[key]
                     
-                    if len(step_s) == 0:
-                        print("Warning: unmatched step-end")
-                    else:
-                        uuid, step = step_s.pop()
-                        step.status = Status.PASSED
-                        self.reporter.stop_step(uuid, stop=now())
+                        if len(step_s) == 0:
+                            print("Warning: unmatched step-end")
+                        else:
+                            uuid, step = step_s.pop()
+                            step.status = Status.PASSED
+                            self.reporter.stop_step(uuid, stop=now())
                 elif line.startswith("@fatal"):
                     begin = len("@fatal")
                     end = -1
@@ -213,16 +225,18 @@ class JobWrapper(object):
 #                             test_case.statusDetails.message += "\n" + line[len("@fatal"):]
                             
                     # Add to the test status itself
-                    if test_case.statusDetails is None:
-                        test_case.statusDetails = StatusDetails(message=line[len("@fatal"):])
-                    else:
-                        test_case.statusDetails.message += "\n" + line[len("@fatal"):]
+                    if test_case is not None:
+                        if test_case.statusDetails is None:
+                            test_case.statusDetails = StatusDetails(message=line[len("@fatal"):])
+                        else:
+                            test_case.statusDetails.message += "\n" + line[len("@fatal"):]
             elif line_s.startswith("Exception:"):
                 # Save the exception
-                if test_case.statusDetails is None:
-                    test_case.statusDetails = StatusDetails(message=line)
-                else:
-                    test_case.statusDetails.message += "\n" + line
+                if test_case is not None:
+                    if test_case.statusDetails is None:
+                        test_case.statusDetails = StatusDetails(message=line)
+                    else:
+                        test_case.statusDetails.message += "\n" + line
                                 
             job_log.write(line)
             
@@ -236,7 +250,8 @@ class JobWrapper(object):
         
         if proc.wait() == 0:
             if not os.path.isfile("status.txt"):
-                test_case.status = Status.FAILED
+                if test_case is not None:
+                    test_case.status = Status.FAILED
             else:
                 with open("status.txt", "r") as fp:
                     pass_count = 0
@@ -247,12 +262,14 @@ class JobWrapper(object):
                         if line.find("FAIL") != -1:
                             fail_count += 1
 
-                    if pass_count > 0 and fail_count == 0:
-                        test_case.status = Status.PASSED
-                    else:
-                        test_case.status = Status.FAILED
+                    if test_case is not None:
+                        if pass_count > 0 and fail_count == 0:
+                            test_case.status = Status.PASSED
+                        else:
+                            test_case.status = Status.FAILED
         else:
-            test_case.status = Status.FAILED
+            if test_case is not None:
+                test_case.status = Status.FAILED
             
         # Process the env file to pull out specific result labels
         env = {}
@@ -268,21 +285,24 @@ class JobWrapper(object):
                         env[key] = value
 
         tool = env["MKDV_TOOL"] if "MKDV_TOOL" in env.keys() else "UNKNOWN"
-        test_case.labels.append(Label(name=LabelType.FRAMEWORK, value=tool))
-        test_case.labels.append(Label(name=LabelType.HOST, value=socket.gethostname()))
+        if test_case is not None:
+            test_case.labels.append(Label(name=LabelType.FRAMEWORK, value=tool))
+            test_case.labels.append(Label(name=LabelType.HOST, value=socket.gethostname()))
 
         # Add labels coming through the test description        
         if "labels" in job.keys() and job["labels"] is not None:
             for l in job["labels"]:
                 name = next(iter(l))
                 val = l[name]
-                test_case.labels.append(Label(name=name, value=val))
+                if test_case is not None:
+                    test_case.labels.append(Label(name=name, value=val))
                 
         if "parameters" in job.keys() and job["parameters"] is not None:
             for p in job["parameters"]:
                 name = next(iter(p))
                 val = p[name]
-                test_case.parameters.append(Parameter(name=name, value=val))
+                if test_case is not None:
+                    test_case.parameters.append(Parameter(name=name, value=val))
 
         if "MKDV_JOB_PARAMETERS" in env.keys():
             params = env["MKDV_JOB_PARAMETERS"]
@@ -300,21 +320,22 @@ class JobWrapper(object):
                         end += 1
                     key = params[i:eq]
                     val = params[eq+1:end]
-                    
-                    test_case.parameters.append(Parameter(name=key, value=val))
+                   
+                    if test_case is not None:
+                        test_case.parameters.append(Parameter(name=key, value=val))
                     i = end
                 else:
                     break
         
-            
-        self.reporter.attach_file(
-            uuid4(), 
-            "job.log",
-            "log")
+
+        if test_case is not None:
+            self.reporter.attach_file(
+                uuid4(), 
+                "job.log",
+                "log")
         
             
-        
-        if "attachments" in job.keys():
+        if "attachments" in job.keys() and test_case is not None:
             for a in job["attachments"]:
                 name = next(iter(a))
                 path = a[name]
@@ -324,9 +345,9 @@ class JobWrapper(object):
                     path,
                     name)
                 
-            
-        test_case.stop=now()
-        self.reporter.close_test(test_uuid)
-#            print("line: %s" % line)
+
+        if test_case is not None:
+            test_case.stop=now()
+            self.reporter.close_test(test_uuid)
     
     

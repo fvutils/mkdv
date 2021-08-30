@@ -13,6 +13,7 @@ from .cmd_regress import cmd_regress
 from .cmd_run import cmd_run
 import sys
 from mkdv.jobspec_loader import JobspecLoader
+from mkdv import backends
 
 
 def mkfile(args):
@@ -62,6 +63,9 @@ def get_parser():
         help="Specifies a file containing a test-spec to use")
     regress_cmd.add_argument("-j", "--max-par", dest="max_par",
         help="Specifies maximum jobs to run in parallel")
+    regress_cmd.add_argument("-b", "--backend", dest="backend",
+        default="local", choices=backends.backends(),
+        help="Specifies the backend used for launching jobs")
     regress_cmd.set_defaults(func=cmd_regress)
     
     run_cmd = subparser.add_parser("run",
