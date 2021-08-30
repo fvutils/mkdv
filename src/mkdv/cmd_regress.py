@@ -11,6 +11,7 @@ from .runner import Runner
 from mkdv.jobspec_loader import JobspecLoader
 from mkdv.job_spec_gen_loader import JobSpecGenLoader
 from mkdv import backends
+from mkdv.job_spec_filter import JobSpecFilter
 
 
 def cmd_regress(args):
@@ -24,7 +25,7 @@ def cmd_regress(args):
     
     specs = jobset_s.jobspecs.copy()
     gen_specs = []    
-    # TODO: filter specs
+    
 
     for s in jobset_s.jobspec_gen:
         spec_gendir = os.path.join(gendir, s.root_id)
@@ -32,6 +33,12 @@ def cmd_regress(args):
         gen_jobset_s = JobSpecGenLoader(spec_gendir).load(s)
 
         specs.extend(gen_jobset_s.jobspecs)
+        
+    # filter specs
+    specs = JobSpecFilter(
+        args.include if args.include is not None else [],
+        args.exclude if args.exclude is not None else []
+        ).filter(specs)
         
     os.makedirs(rundir, exist_ok=True)
     

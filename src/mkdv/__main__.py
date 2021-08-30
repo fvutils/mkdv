@@ -50,6 +50,8 @@ def get_parser():
         help="Discovers and lists available tests")
     list_cmd.add_argument("-s", "--job-spec", dest="jobspec",
         help="Specifies the job-spec file (mkdv.yaml by default)")
+    list_cmd.add_argument("-c", "--job-categories", dest="categories",
+        action="store_true", help="Show job categories, not individual jobs")
     list_cmd.set_defaults(func=cmd_list)
     
     mkfile_cmd = subparser.add_parser("mkfile",
@@ -66,6 +68,12 @@ def get_parser():
     regress_cmd.add_argument("-b", "--backend", dest="backend",
         default="local", choices=backends.backends(),
         help="Specifies the backend used for launching jobs")
+    regress_cmd.add_argument("-e", "--exclude", dest="exclude",
+        action="append", 
+        help="Specifies test patterns to exclude from the runlist")
+    regress_cmd.add_argument("-i", "--include", dest="include",
+        action="append", 
+        help="Specifies test patterns to include in the runlist")
     regress_cmd.set_defaults(func=cmd_regress)
     
     run_cmd = subparser.add_parser("run",
@@ -77,8 +85,7 @@ def get_parser():
         help="Run in debug mode")
     run_cmd.add_argument("-s", "--job-spec", dest="jobspec",
         help="Specifies the job-spec file (mkdv.yaml by default)")
-    run_cmd.add_argument("-j", "--job-id", dest="jobid",
-        help="Specifies job-id to run.")
+    run_cmd.add_argument("jobid", help="Specifies job-id to run.")
     run_cmd.set_defaults(func=cmd_run)
     
     return parser
