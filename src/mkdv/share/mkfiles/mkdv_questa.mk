@@ -31,6 +31,10 @@ ifeq (1,$(MKDV_DEBUG))
 VSIM_OPTIONS += -qwavedb=+report=class+signal+memory
 endif
 
+ifeq (1,$(MKDV_VALGRIND))
+  VSIM_OPTIOSN += -valgrind --tool=memcheck 
+endif
+
 MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/work
 
 else # Rules
