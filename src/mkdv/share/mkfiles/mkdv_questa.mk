@@ -20,6 +20,7 @@ ifeq (questa,$(MKDV_TOOL))
 ifneq (1,$(RULES))
 
 MKDV_VL_DEFINES += HAVE_HDL_CLOCKGEN
+MKDV_VL_DEFINES += HAVE_HDL_VIRTUAL_INTERFACE
 MKDV_VL_DEFINES += HAVE_BIND
 
 VLOG_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
@@ -32,7 +33,7 @@ VSIM_OPTIONS += -qwavedb=+report=class+signal+memory
 endif
 
 ifeq (1,$(MKDV_VALGRIND))
-  VSIM_OPTIOSN += -valgrind --tool=memcheck 
+  VSIM_OPTIONS += -valgrind --tool=memcheck 
 endif
 
 MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/work
@@ -42,6 +43,9 @@ else # Rules
 build-questa : $(MKDV_BUILD_DEPS)
 
 $(MKDV_CACHEDIR)/work : $(MKDV_VL_SRCS)
+ifeq (,$(TOP_MODULE))
+	@echo "Error: TOP_MODULE not specified"; exit 1
+endif
 	vlib work
 	vlog $(VLOG_OPTIONS) $(MKDV_VL_SRCS) || (rm -rf work ; exit 1)
 #	vopt -access=rw+/. -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
