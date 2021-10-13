@@ -82,7 +82,7 @@ endif
 		$(foreach l,$(DPI_LIBS),$(l))
 
 run-vlsim : $(MKDV_RUN_DEPS)
-	$(VLSIM_PREFIX) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS) $(MKDV_RUN_ARGS)
+	$(VLSIM_PREFIX) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
 	
 
 endif
