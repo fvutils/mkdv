@@ -20,7 +20,7 @@ class JobspecLoader(object):
         
         self.jobspec_s = None
         self.dflt_mkdv_mk = None
-        self.debug = 0
+        self.debug = 1
         pass
     
     def load(self, 
@@ -32,7 +32,8 @@ class JobspecLoader(object):
         self.dflt_mkdv_mk = dflt_mkdv_mk
         
         if self.debug > 0:
-            print("--> JobspecLoader::load specfile=" + str(specfile))
+            print("--> JobspecLoader::load specfile=%s prefix=%s" %(
+                str(specfile), str(prefix)))
         
 #        if prefix is not None:
 #            self.prefix_s.append(prefix)
@@ -95,6 +96,9 @@ class JobspecLoader(object):
         self.process_root(data)
         self.dir_s.pop()
         self.prefix_s.pop()
+        
+        if self.debug > 0:
+            print("<-- process_yaml: %s %s" % (str(path), str(prefix)))
               
     def process_root(self, root):
         self.process_sections(root)
@@ -263,11 +267,17 @@ class JobspecLoader(object):
             
     
     def process_mkdv_mk_test(self, mkdv_mk, fullname, localname, testdesc):
+        if self.debug > 0:
+            print("--> process_mkdv_mk_test mkdv_mk=%s fullname=%s localname=%s" % (
+                mkdv_mk, fullname, localname))
+            
         test = JobSpec(mkdv_mk, fullname, localname)
         self.jobspec_s.jobspecs.append(test)
 
         if testdesc is not None:       
             if "variables" in testdesc.keys():
+                if self.debug > 0:
+                    print("processing variables")
                 variables = testdesc["variables"]
                 if isinstance(variables, list):
                     for vs in variables:
@@ -281,6 +291,11 @@ class JobspecLoader(object):
                 
                     for vk in ov.keys():
                         test.variables[vk] = ov[vk]
+            else:
+                if self.debug > 0:
+                    print("no variables")
+            if "limit-time" in testdesc.keys():
+                test.limit_time = testdesc["limit-time"]
         
             if "description" in testdesc.keys():
                 test.description = testdesc["description"]
@@ -306,4 +321,8 @@ class JobspecLoader(object):
                     path = a[name]
                 
                     test.attachments.append((name, path))
+                    
+        if self.debug > 0:
+            print("<-- process_mkdv_mk_test mkdv_mk=%s fullname=%s localname=%s" % (
+                mkdv_mk, fullname, localname))
                 

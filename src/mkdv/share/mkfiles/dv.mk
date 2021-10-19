@@ -75,7 +75,7 @@ endif
 
 .PHONY: _run pre-run run post-run
 _run : 
-	@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
+	#@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
 	# Save environment variables for inspection
 	@env > job.env
 ifeq (,$(MKDV_MK))

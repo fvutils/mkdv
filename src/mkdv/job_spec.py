@@ -19,6 +19,7 @@ class JobSpec(object):
         self.parameters : Dict[str,str] = {}
         self.labels : Dict[str,str] = {}
         self.rerun = False
+        self.limit_time = None
         
     def append_run_variables(self, cmdline):
         """Append job variables to command-line list"""

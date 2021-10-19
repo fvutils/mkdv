@@ -45,6 +45,10 @@ def cmd_regress(args):
     backend = backends.backend(args.backend)
     
     r = Runner(rundir, backend, specs)
+    
+    if hasattr(args, "limit_time") and args.limit_time is not None:
+        r.limit_time = args.limit_time
+    r.tool = args.tool
 
     # TODO: should query the job runner     
     if args.max_par is not None:

@@ -52,7 +52,9 @@ def cmd_run(args):
             
     print("spec=" + str(spec))
     
-    cmdline = ["make"]
+    cmdline = []
+    
+    cmdline.append("make")
     cmdline.append("-f")
     cmdline.append(os.path.join(cwd, "mkdv.mk"))
 
@@ -66,6 +68,10 @@ def cmd_run(args):
     if hasattr(args, "debug") and args.debug:
         cmdline.append("MKDV_DEBUG=1")
         cmdline.append("DEBUG=1")
+        
+    for var,val in spec.variables.items():
+        cmdline.append("%s=\"%s\"" % (var, val))
+        
     
     # TODO: Add variables if spec
 
@@ -87,6 +93,10 @@ def cmd_run(args):
         return proc.returncode
         
     cmdline.pop()
+    
+    if hasattr(args, "limit_time") and args.limit_time is not None:
+        cmdline.insert(0, "%s" % args.limit_time)
+        cmdline.insert(0, "timeout")
     cmdline.append("_run")
     
     print(f"{Fore.YELLOW}[Start Run]{Style.RESET_ALL}")
@@ -101,6 +111,8 @@ def cmd_run(args):
 
     if proc.returncode == 0:
         print(f"{Fore.GREEN}[Run PASS]{Style.RESET_ALL}")
+    elif proc.returncode == 124:
+        print(f"{Fore.RED}[Run FAIL]{Style.RESET_ALL} timeout after %s" % str(args.limit_time))
     else:
         print(f"{Fore.RED}[Run FAIL]{Style.RESET_ALL} -- exit code " + str(proc.returncode))
         

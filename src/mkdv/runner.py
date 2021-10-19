@@ -26,6 +26,8 @@ class Runner(object):
         self.specs = specs
         self.maxpar = -1
         self.rerun_failing = True
+        self.limit_time = None
+        self.tool = None
         
     async def runjobs(self):
         start = datetime.datetime.now()
@@ -106,6 +108,8 @@ class Runner(object):
                 cmdline = []
                 cmdline.extend([sys.executable, "-m", "mkdv.wrapper"])
                 cmdline.append(os.path.join(rundir, "job.yaml"))
+                
+                self.init_spec(spec)
                 
                 self.write_job_yaml(
                     os.path.join(rundir, "job.yaml"),
@@ -197,6 +201,10 @@ class Runner(object):
             fp.write("    reportdir: %s\n" % os.path.join(self.root, "report"))
             fp.write("    name: %s\n" % spec.localname)
             fp.write("    qname: %s\n" % spec.fullname)
+            if spec.limit_time is not None:
+                fp.write("    limit-time: %s\n" % str(spec.limit_time))
+            elif self.limit_time is not None:
+                fp.write("    limit-time: %s\n" % str(self.limit_time))
             if spec.rerun:
                 fp.write("    rerun: true\n")
             else:
@@ -239,6 +247,12 @@ class Runner(object):
 # #                cmdline.append("MKDV_TEST=" + spec.localname)
 #                 # TODO: separate build/run
 #                 cmdline.append("run")            
+
+    def init_spec(self, spec : JobSpec):
+        
+        if "MKDV_TOOL" not in spec.variables.keys() and self.tool is not None:
+            spec.variables["MKDV_TOOL"] = str(self.tool)
+            
                     
     async def run_builds(self, jobs : List[JobQueue]):
         loop = asyncio.get_event_loop()

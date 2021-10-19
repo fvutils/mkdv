@@ -60,9 +60,11 @@ def get_parser():
     
     regress_cmd = subparser.add_parser("regress",
         help="Run a series of tests")
-    regress_cmd.add_argument("-t", "--test-spec", 
+    regress_cmd.add_argument("-s", "--test-spec", 
         dest="test_specs", action="append",
         help="Specifies a file containing a test-spec to use")
+    regress_cmd.add_argument("-t", "--tool", dest="tool",
+        help="Specify the tool to run (defaults to makefile setting)")
     regress_cmd.add_argument("-j", "--max-par", dest="max_par",
         help="Specifies maximum jobs to run in parallel")
     regress_cmd.add_argument("-b", "--backend", dest="backend",
@@ -74,6 +76,8 @@ def get_parser():
     regress_cmd.add_argument("-i", "--include", dest="include",
         action="append", 
         help="Specifies test patterns to include in the runlist")
+    regress_cmd.add_argument("-lt", "--limit-time", dest="limit_time",
+        help="Specify job's time limit")
     regress_cmd.set_defaults(func=cmd_regress)
     
     run_cmd = subparser.add_parser("run",
@@ -83,6 +87,8 @@ def get_parser():
     run_cmd.add_argument("-d", "--debug", dest="debug",
         action="store_true",
         help="Run in debug mode")
+    run_cmd.add_argument("-lt", "--limit-time", dest="limit_time",
+        help="Specify job's time limit")
     run_cmd.add_argument("-s", "--job-spec", dest="jobspec",
         help="Specifies the job-spec file (mkdv.yaml by default)")
     run_cmd.add_argument("jobid", help="Specifies job-id to run.")

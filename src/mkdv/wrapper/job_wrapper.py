@@ -34,14 +34,14 @@ class JobWrapper(object):
         self.reporter = AllureReporter()
         self.step_stream_m = Dict[str, List]
         self.step_m : Dict[str, List[Tuple[str,TestStepResult]]] = {}
-
-
-
     
     def run(self):
         job = self.job_yaml["job"]
     
-        cmdline = ["make", "-f"]
+        cmdline = []
+        if "limit-time" in job.keys():
+            cmdline.extend(["timeout", str(job["limit-time"])])
+        cmdline.extend(["make", "-f"])
         cmdline.append(job["mkfile"].strip())
         cmdline.append("MKDV_RUNDIR=%s" % os.getcwd())
         cmdline.append("MKDV_CACHEDIR=%s" % job["cachedir"].strip())
@@ -248,8 +248,9 @@ class JobWrapper(object):
             for step_i in self.step_m[key]:
 #                step_i[1].status = Status.PASSED
                 self.reporter.stop_step(step_i[0], stop=now())
-        
-        if proc.wait() == 0:
+
+        code = proc.wait()
+        if code == 0:
             if not os.path.isfile("status.txt"):
                 if test_case is not None:
                     test_case.status = Status.FAILED
@@ -268,6 +269,10 @@ class JobWrapper(object):
                             test_case.status = Status.PASSED
                         else:
                             test_case.status = Status.FAILED
+        elif code == 124: # Timeout
+            with open("job.log", "a") as fp:
+                fp.write("MKDV Error: Timeout after %s\n" % (
+                    str(job["limit-time"])))
         else:
             if test_case is not None:
                 test_case.status = Status.FAILED
