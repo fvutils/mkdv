@@ -36,6 +36,8 @@ else
 SIMV = simv.ndebug
 endif
 
+SIMV = simv.debug
+
 ifeq (1,$(MKDV_VALGRIND))
   VLSIM_PREFIX=valgrind --tool=memcheck 
 endif
@@ -59,7 +61,7 @@ VLSIM_DEBUG_OPTIONS += --trace-fst
 
 # Always build both images
 MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.debug
-MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.ndebug
+#MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.ndebug
 
 else # Rules
 
