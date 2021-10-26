@@ -154,6 +154,8 @@ class JobspecLoader(object):
             if testdesc is not None:
                 if "path" in testdesc.keys():
                     
+                    start_idx = len(self.jobspec_s.jobspecs)
+                    
                     if "command" in testdesc.keys():
                         mkdv_mk = self.dflt_mkdv_mk
                         
@@ -193,6 +195,19 @@ class JobspecLoader(object):
                                 print("Warning: Test " + testname + " has neither mkdv.mk nor mkdv.yaml")
                         else:
                             print("Warning: Test " + testname + " doesn't point to anything")
+
+                    # The user is customizing settings for these jobs
+                    if "run-vars" in testdesc.keys():
+                        i = start_idx
+                        run_vars = self.read_vars(testdesc["run-vars"])
+                        print("Note: Applying test overrides: %s" % str(run_vars))
+                        
+                        while i < len(self.jobspec_s.jobspecs):
+                            j = self.jobspec_s.jobspecs[i]
+                            for vk,vv in run_vars.items():
+                                j.variables[vk] = vv
+                            i += 1
+                        
                 elif os.path.isfile(os.path.join(dir, "mkdv.mk")):
 #                    print("Makefile test with options: " + testname)
                     self.process_mkdv_mk_test(
@@ -325,4 +340,16 @@ class JobspecLoader(object):
         if self.debug > 0:
             print("<-- process_mkdv_mk_test mkdv_mk=%s fullname=%s localname=%s" % (
                 mkdv_mk, fullname, localname))
+            
+    def read_vars(self, vars) -> dict:
+        ret = {}
+        if isinstance(vars, list):
+            for vs in vars:
+                vk = next(iter(vs))
+                ret[vk] = vs[vk]
+        else:
+            print("Warning: variables is not a dict: " + str(variables))        
+            
+        return ret
+        
                 

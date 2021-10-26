@@ -49,6 +49,7 @@ def cmd_regress(args):
     if hasattr(args, "limit_time") and args.limit_time is not None:
         r.limit_time = args.limit_time
     r.tool = args.tool
+    r.rerun_failing = args.rerun_failing
 
     # TODO: should query the job runner     
     if args.max_par is not None:

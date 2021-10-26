@@ -78,6 +78,10 @@ def get_parser():
         help="Specifies test patterns to include in the runlist")
     regress_cmd.add_argument("-lt", "--limit-time", dest="limit_time",
         help="Specify job's time limit")
+    regress_cmd.add_argument("-r", "--rerun-failing", dest="rerun_failing",
+        action="store_true",
+        help="Rerun failing jobs with debug enabled")
+    
     regress_cmd.set_defaults(func=cmd_regress)
     
     run_cmd = subparser.add_parser("run",
