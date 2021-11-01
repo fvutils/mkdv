@@ -47,7 +47,7 @@ SIMV_ARGS += +timeout=$(ICARUS_TIMEOUT)
 SIMV_ARGS += $(MKDV_RUN_ARGS)
 
 SIMV=simv.vvp
-ifeq (1,$(DEBUG))
+ifeq (1,$(MKDV_DEBUG))
 SIMV_ARGS += +dumpvars
 endif
 
