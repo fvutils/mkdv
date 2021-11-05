@@ -48,6 +48,7 @@ extensions = [
     'sphinx.ext.viewcode',
     'sphinx.ext.napoleon',
     'sphinx.ext.intersphinx',
+    'sphinx-jsonschema',
 #    'sphinxcontrib.makedomain',
     'sphinx.ext.inheritance_diagram',
 #    'cairosvgconverter',

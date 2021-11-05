@@ -1,0 +1,165 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://github.com/fvutils/mkdv/mkdv.schema.json",
+	"title": "mkdv.yaml schema",
+	"description": "Schema for mkdv.yaml job-description files",
+	"type": "object",
+	"properties": {
+		"jobs": {
+			"type": "array",
+			"items": {
+				"oneOf": [
+					{ "$ref": "#/defs/job" },
+					{ "$ref": "#/defs/job-group" }
+			    ]
+			}
+		}
+	},
+	"defs": {
+		"job": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"description": "Test leafname",
+					"type": "string"
+				},
+				"description": {
+					"description": "Description of the job",
+					"type": "string"
+				},
+				"setup-vars": {
+					"description": "Variables used for the setup step",
+					"type": "array",
+					"items": {
+						"$ref": "#/defs/var" 
+					}
+				},
+				"run-vars": {
+					"description": "Variables used for the run step",
+					"type": "array",
+					"items": {
+						"$ref": "#/defs/var" 
+					}
+				},
+				"attachments": {
+					"description": "Files to attach to the result report",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"labels": {
+					"description": "Labels that apply to the job",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"parameters": {
+					"description": "Parameters to apply to the job",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+				"limit-time": {
+					"description": "Specifies job time limit in units of s,m,h",
+					"type": "string"
+				}
+			},
+			"required": [ "name" ]
+		},
+	    "job-group": {
+	    	"type": "object",
+	    	"properties": {
+	    		"name": {
+	    			"type": "string"
+	    		},
+	    		"setup-vars": {
+	    			"type": "array",
+	    			"items": {
+	    				"$ref": "#/defs/var"
+	    			}
+	    		},
+	    		"run-vars": {
+	    			"type": "array",
+	    			"items": {
+	    				"$ref": "#/defs/var"
+	    			}
+	    		},
+				"labels": {
+					"description": "Labels that apply to jobs in the group",
+					"type": "array",
+					"items": {
+						"type": "string"
+					}
+				},
+	    	    "jobs": {
+	    	    	"oneOf": [
+	    	    		{
+			    	    	"type": "array",
+							"items": {
+								"oneOf": [
+									{ "$ref": "#/defs/job" },
+									{ "$ref": "#/defs/job-group" }
+							    ]
+							}
+	    	    		},
+	    	    		{
+							"path": {
+								"description": "Path to another job-spec",
+								"type": "string"
+							},
+							"command": {
+								"description": "Command to run to produce a testlist",
+								"type": "string"
+							}
+						}
+					]
+				},
+				"limit-time": {
+					"description": "Default job-time limit in units of s,m,h",
+					"type": "string"
+				}
+	    	}
+	    },
+		"var": {
+			"oneOf": [
+				{
+					"description": "Full-feature form of specifying variables",
+					"type": "object",
+					"properties": {
+						"var": {
+							"type": "string"
+						},
+						"val": {
+							"type": "string"
+						},
+						"append-path": {
+							"type": "string"
+						},
+						"append-list": {
+							"type": "string"
+						},
+						"prepend-path": {
+							"type": "string"
+						},
+						"prepend-list": {
+							"type": "string"
+						},
+						"override": {
+							"type": "boolean"
+						}
+					},
+					"required": ["var"]
+				},
+				{
+					"description": "Simple key/value form of specifying variables",
+					"type": "object"
+				}
+			]
+		}
+	}
+}
+
+

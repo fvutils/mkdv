@@ -1,0 +1,63 @@
+{
+	"$schema": "https://json-schema.org/draft/2020-12/schema",
+	"$id": "https://github.com/fvutils/mkdv/mkdv.schema.json",
+	"title": "mkdv.yaml schema",
+	"description": "Schema for mkdv.yaml job-description files",
+	"type": "object",
+	"properties": {
+		"job-specs": {
+			"type": "object",
+			"properties": {
+				"job-items": {
+					"type": "array"
+				},
+			},
+		},
+	},
+	"$defs": {
+		"job": {
+			"type": "object",
+			"properties": {
+				"name": {
+					"type": "string"
+				},
+				"setup-vars": {
+					"type": "array",
+					"items": [
+						"var": ["schema": "#/$defs/var"],
+					],
+				},
+			},
+			"required": [ "name" ],
+		},
+		"var": {
+			"type": "object",
+			"properties": {
+				"var": {
+					"type": "string"
+				},
+				"val": {
+					"type": "string"
+				},
+				"append-path": {
+					"type": "string"
+				},
+				"append-list": {
+					"type": "string"
+				},
+				"prepend-path": {
+					"type": "string"
+				},
+				"prepend-list": {
+					"type": "string"
+				},
+				"override": {
+					"type": "boolean"
+				},
+			},
+			"required": ["var"],
+		}
+	}
+}
+
+

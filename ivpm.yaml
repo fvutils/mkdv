@@ -1,0 +1,17 @@
+
+package:
+  name: mkdv
+  version: 0.0.1
+
+  dev-deps:
+    - name: colorama
+      src: pypi
+    - name: pyyaml
+      src: pypi
+    - name: allure-python-commons
+      src: pypi
+    - name: markdown
+      src: pypi
+    - name: jsonschema
+      src: pypi
+
