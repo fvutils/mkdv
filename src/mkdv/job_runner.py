@@ -18,7 +18,7 @@ from typing import List
 from mkdv.job_queue import JobQueue
 from mkdv.job_spec import JobSpec
 
-class Runner(object):
+class JobRunner(object):
     
     def __init__(self, root, backend, specs):
         self.root = root

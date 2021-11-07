@@ -4,22 +4,41 @@ Created on Dec 30, 2020
 @author: mballance
 '''
 from typing import Tuple, List, Dict, Set
+from mkdv.runners.runner_spec import RunnerSpec
 
 class JobSpec(object):
     
-    def __init__(self, mkdv_mk, fullname, localname):
-        self.mkdv_mk = mkdv_mk
+    def __init__(self, name, fullname):
+        self.name = name
         self.fullname = fullname
-        self.localname = localname
         self.description = None
+       
+        # Directory containing the job specification
+        self.basedir = None
+        
+        # Run directory is populated late
         self.rundir = None
+
+        # Cache directory is populated once jobs are known        
         self.cachedir = None
+        
+        # Run variables are associated with the job
         self.variables = {}
+
+        # Attachments, parameters, and labels are used by 
+        # the runner to determine what data to save for reporting        
         self.attachments : List[Tuple[str, str]] = []
         self.parameters : Dict[str,str] = {}
         self.labels : Dict[str,str] = {}
+
+        # Rerun specifies whether this job execution is a rerun
+        # of a previous unsuccessful run
+                
         self.rerun = False
-        self.limit_time = None
+        self.limit = None
+        
+        # Runner spec contains data about *how* to execute the job
+        self.runner_spec : RunnerSpec = None
         
     def append_run_variables(self, cmdline):
         """Append job variables to command-line list"""

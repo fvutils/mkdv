@@ -5,18 +5,20 @@
 	"description": "Schema for mkdv.yaml job-description files",
 	"type": "object",
 	"properties": {
-		"jobs": {
-			"type": "array",
-			"items": {
-				"oneOf": [
-					{ "$ref": "#/defs/job" },
-					{ "$ref": "#/defs/job-group" }
-			    ]
-			}
+		"job-group": {
+			"$ref": "#defs/jobGroupType"
+		},
+		"job": {
+			"$ref": "#/defs/jobType"
 		}
 	},
+	"oneOf": [
+		{ "required": [ "job-group" ] },
+		{ "required": [ "job" ] }
+	],
+	"additionalProperties": false,
 	"defs": {
-		"job": {
+		"jobType": {
 			"type": "object",
 			"properties": {
 				"name": {
@@ -26,6 +28,21 @@
 				"description": {
 					"description": "Description of the job",
 					"type": "string"
+				},
+				"runner": { 
+					"$ref": "#/defs/runner" 
+				},
+				"run-generators": { 
+					"type": "array",
+					"items": {
+						"$ref": "#defs/generator-spec"
+					}
+				},
+				"setup-generators": { 
+					"type": "array",
+					"items": {
+						"$ref": "#defs/generator-spec"
+					}
 				},
 				"setup-vars": {
 					"description": "Variables used for the setup step",
@@ -69,12 +86,26 @@
 			},
 			"required": [ "name" ]
 		},
-	    "job-group": {
+	    "jobGroupType": {
 	    	"type": "object",
 	    	"properties": {
 	    		"name": {
 	    			"type": "string"
 	    		},
+				"run-generators": { 
+					"description": "Generators to execute during run step",
+					"type": "array",
+					"items": {
+						"$ref": "#defs/generator-specs"
+					}
+				},
+				"setup-generators": { 
+					"description": "Generators to run during setup",
+					"type": "array",
+					"items": {
+						"$ref": "#defs/generator-specs"
+					}
+				},
 	    		"setup-vars": {
 	    			"type": "array",
 	    			"items": {
@@ -95,32 +126,79 @@
 					}
 				},
 	    	    "jobs": {
-	    	    	"oneOf": [
-	    	    		{
-			    	    	"type": "array",
-							"items": {
-								"oneOf": [
-									{ "$ref": "#/defs/job" },
-									{ "$ref": "#/defs/job-group" }
-							    ]
-							}
-	    	    		},
-	    	    		{
-							"path": {
-								"description": "Path to another job-spec",
-								"type": "string"
+	    	    	"type": "array",
+					"items": {
+						"oneOf": [
+							{
+								"$ref": "#/defs/jobType"
 							},
-							"command": {
-								"description": "Command to run to produce a testlist",
-								"type": "string"
+							{
+		    	    			"type": "object",
+		    	    			"properties": {
+									"path": {
+										"description": "Path to another job-spec",
+										"type": "string"
+									},
+									"command": {
+										"description": "Command to run to produce a testlist",
+										"type": "string"
+									}
+								},
+								"required": ["path"]
 							}
-						}
-					]
+						]
+					}
 				},
 				"limit-time": {
 					"description": "Default job-time limit in units of s,m,h",
 					"type": "string"
 				}
+	    	},
+	    	"required": ["jobs"],
+	    	"additionalProperties": false
+	    },
+	   "runner": {
+			"description": "Specifies the runner to use for this job or jobs",
+			"type": "object",
+			"properties": {
+				"id": {
+					"type": "string",
+					"description": "Id for the runner to use"
+				},
+				"auto-discover": {
+					"type": "boolean",
+					"description": "True if the runner will identify jobs in this group"
+				},
+				"config": {
+					"type": "object",
+					"description": "Runner-specific configuration data"
+				}
+			}
+	   	},
+	    "run-generators": {
+	    	"description": "Specifies run-phase generators to execute",
+	    	"type": "array",
+	    	"items": {
+	    		"$ref": "#defs/generator-spec"
+	    	}
+	   	},
+	    "setup-generators": {
+	    	"description": "Specifies setup-phase generators to execute",
+	    	"type": "array",
+	    	"items": {
+	    		"$ref": "#defs/generator-spec"
+	    	}
+	   	},
+	    "generator-spec": {
+	    	"description": "Key parameters to a generator",
+	    	"type": "object",
+	    	"properties": {
+	    		"id": {
+	    			"type": "string"
+	    		},
+	    		"config": {
+	    			"type": "object"
+	    		}
 	    	}
 	    },
 		"var": {

@@ -10,10 +10,15 @@ from mkdv.job_spec_set import JobSpecSet
 from mkdv.job_spec_gen import JobSpecGen
 from mkdv.yaml_loader import YamlLoader
 from yaml.loader import FullLoader
+from mkdv.stream_provider import StreamProvider
+from typing import List
+import json
+import jsonschema
+from jsonschema.validators import Draft4Validator
 
 class JobspecLoader(object):
     
-    def __init__(self):
+    def __init__(self, stream_provider : StreamProvider):
         self.prefix_s = []
         self.variables_s = []
         self.dir_s = []
@@ -21,38 +26,18 @@ class JobspecLoader(object):
         self.jobspec_s = None
         self.dflt_mkdv_mk = None
         self.debug = 1
+        
+        self.stream_provider = stream_provider
+        self.schema = None
         pass
     
-    def load(self, 
-             root, 
-             specfile=None,
-             dflt_mkdv_mk=None,
-             prefix=None):
+    def load(self, specfile : str):
         self.jobspec_s = JobSpecSet()
-        self.dflt_mkdv_mk = dflt_mkdv_mk
         
         if self.debug > 0:
-            print("--> JobspecLoader::load specfile=%s prefix=%s" %(
-                str(specfile), str(prefix)))
-        
-#        if prefix is not None:
-#            self.prefix_s.append(prefix)
-            
-        if specfile is not None:
-            self.process_yaml(specfile, prefix)
-        elif os.path.isfile(os.path.join(root, "mkdv.yaml")):
-            # This test suite is described by YAML files
-            self.process_yaml(os.path.join(root, "mkdv.yaml"), prefix)
-            pass
-        else:
-            # This test suite is described by individual mkfiles
-            self.find_tests(root, None)
+            print("--> JobspecLoader::load specfile=%s" % specfile)
 
-#        if prefix is not None:            
-#            self.prefix_s.pop()
-            
-#        for t in self.test_l:
-#            print("Test: " + t.fullname + " " + t.mkdv_mk + " " + str(t.variables))
+        self.process_yaml(specfile, None)
 
         if self.debug > 0:
             print("<-- JobspecLoader::load %d jobs %d genjobs" % (
@@ -75,30 +60,133 @@ class JobspecLoader(object):
             print("--> process_yaml: %s %s" % (str(path), str(prefix)))
 
         dir = os.path.dirname(path)
+        self.dir_s.append(dir)
         data = None
-        with open(path) as f:
-            data = yaml.load(f, Loader=FullLoader)
+        fp = self.stream_provider.open(path, "r")
+        
+        data = yaml.load(fp, Loader=FullLoader)
+        
+        self.stream_provider.close(fp)
+        
+        if self.schema is None:
+            mkdv_dir = os.path.dirname(os.path.abspath(__file__))
+            schema_dir = os.path.join(mkdv_dir, "share", "schema")
+            with open(os.path.join(schema_dir, "mkdv_schema.json"), "r") as fp:
+                self.schema = json.load(fp)
+
+        print("--> validate: data=%s schema=%s" % (
+            str(data), str(self.schema)))
+        jsonschema.validate(data, self.schema)
+        print("<-- validate")
             
         if data is None:
             # Empty file
             # TODO: issue a warning
             print("Warning: job-spec file %s is empty" % path)
             return
-            
-        if "name" in data.keys():
-            if prefix is None:
-                prefix = data["name"]
+        
+        for key in data.keys():
+            if key == "job":
+                self.process_job(data["job"])
+            elif key == "job-group":
+                self.process_job_group(data["job-group"])
+                pass
             else:
-                prefix += "." + data["name"]
-                
-        self.prefix_s.append(prefix)
-        self.dir_s.append(dir)
-        self.process_root(data)
+                raise Exception("Unknown top-level section %s" % key)
+            
         self.dir_s.pop()
-        self.prefix_s.pop()
+            
+        # if "name" in data.keys():
+        #     if prefix is None:
+        #         prefix = data["name"]
+        #     else:
+        #         prefix += "." + data["name"]
+        #
+        # self.prefix_s.append(prefix)
+        # self.dir_s.append(dir)
+        # self.process_root(data)
+        # self.dir_s.pop()
+        # self.prefix_s.pop()
         
         if self.debug > 0:
             print("<-- process_yaml: %s %s" % (str(path), str(prefix)))
+            
+    def process_job(self, job_s) -> JobSpec:
+        print("job_s: %s" % str(job_s))
+        js = JobSpec(job_s["name"], self.fullname(job_s["name"]))
+        
+        if "description" in job_s.keys():
+            js.description = job_s["description"]
+            
+        if "runner" in job_s.keys():
+            pass
+        else:
+            # TODO: check for a runner from above
+            # If none found, bail out...
+            pass
+        
+        self.jobspec_s.jobspecs.append(js)
+        
+#        self.process_job_run_generators(job_s, js)
+#        self.process_job_setup_generators(job_s, js)
+        
+#        self.process_job_setup_vars(job_s, js)
+#        self.process_job_run_vars(job_s, js)
+
+#        self.process_job
+        return js
+    
+    def process_job_group(self, job_group_s):
+        if "name" in job_group_s.keys():
+            self.prefix_s.append(job_group_s["name"])
+
+        for j in job_group_s["jobs"]:
+            if "name" in j.keys():
+                self.process_job(j)
+            elif "path" in j.keys():
+                # TODO: need to pass along context path
+                self.process_jobspec_path(j["path"])
+            
+        if "name" in job_group_s.keys():
+            self.prefix_s.pop()
+            
+        pass
+    
+    def process_jobspec_path(self, path):
+        dir = os.path.dirname(path)
+        data = None
+        fp = self.stream_provider.open(path, "r")
+        
+        data = yaml.load(fp, Loader=FullLoader)
+        
+        self.stream_provider.close(fp)
+        
+        if self.schema is None:
+            mkdv_dir = os.path.dirname(os.path.abspath(__file__))
+            schema_dir = os.path.join(mkdv_dir, "share", "schema")
+            with open(os.path.join(schema_dir, "mkdv_schema.json"), "r") as fp:
+                self.schema = json.load(fp)
+
+        print("--> validate: data=%s schema=%s" % (
+            str(data), str(self.schema)))
+        jsonschema.validate(data, self.schema)
+        print("<-- validate")
+            
+        if data is None:
+            # Empty file
+            # TODO: issue a warning
+            print("Warning: job-spec file %s is empty" % path)
+            return
+        
+        for key in data.keys():
+            if key == "job":
+                self.process_job(data["job"])
+            elif key == "job-group":
+                self.process_job_group(data["job-group"])
+                pass
+            else:
+                raise Exception("Unknown top-level section %s" % key)        
+        pass
               
     def process_root(self, root):
         self.process_sections(root)
@@ -239,6 +327,12 @@ class JobspecLoader(object):
                 
         if self.debug > 0:
             print("<-- process_jobs")
+            
+    def fullname(self, name):
+        if len(self.prefix_s) == 0:
+            return name
+        else:
+            return ".".join(self.prefix_s) + "." + name
 
     def process_with(self, section):
         

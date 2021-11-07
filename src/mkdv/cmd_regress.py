@@ -7,7 +7,7 @@ import asyncio
 from _datetime import datetime
 import os
 
-from .runner import Runner
+from mkdv.job_runner import JobRunner
 from mkdv.jobspec_loader import JobspecLoader
 from mkdv.job_spec_gen_loader import JobSpecGenLoader
 from mkdv import backends
@@ -44,7 +44,7 @@ def cmd_regress(args):
     
     backend = backends.backend(args.backend)
     
-    r = Runner(rundir, backend, specs)
+    r = JobRunner(rundir, backend, specs)
     
     if hasattr(args, "limit_time") and args.limit_time is not None:
         r.limit_time = args.limit_time

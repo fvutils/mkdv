@@ -6,7 +6,6 @@ Created on Feb 20, 2021
 import asyncio
 import os
 
-from .runner import Runner
 from mkdv.jobspec_loader import JobspecLoader
 from mkdv.job_spec_set import JobSpecSet
 
@@ -51,15 +50,6 @@ def cmd_list(args):
         for j in jobid_l:
             print("%s" % j)
         
-#    if len(jobid_l) > 0:
-#        show_jobids(jobid_l, 0, [0], [""])
-    
-#    r = Runner(os.getcwd(), specs)
-
-#    print("--> run " + str(r))
-#    loop = asyncio.get_event_loop()
-#    loop.run_until_complete(r.runjobs()) 
-
 def show_jobids(jobid_l, list_idx, jobid_idx_s, ind_s) -> int:
     print("--> show_jobids")
     check_last = False
