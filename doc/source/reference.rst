@@ -8,15 +8,16 @@ Job-Spec Schema
 
 Top-level Schema
 ^^^^^^^^^^^^^^^^
+
 .. jsonschema:: ../../src/mkdv/share/schema/mkdv_schema.json
-  :auto_reference:
 
-Job Schema
-^^^^^^^^^^
-.. jsonschema:: ../../src/mkdv/share/schema/mkdv_schema.json#/defs/job
-  :auto_reference:
 
-Job-Group Schema
-^^^^^^^^^^^^^^^^
-.. jsonschema:: ../../src/mkdv/share/schema/mkdv_schema.json#/defs/job-group
-  :auto_reference:
+.. jsonschema:: ../../src/mkdv/share/schema/mkdv_schema.json#/defs/jobType
+
+
+.. jsonschema:: ../../src/mkdv/share/schema/mkdv_schema.json#/defs/jobGroupType
+
+.. jsonschema:: ../../src/mkdv/share/schema/mkdv_schema.json#/defs/runner
+
+.. jsonschema:: ../../src/mkdv/share/schema/mkdv_schema.json#/defs/var
+

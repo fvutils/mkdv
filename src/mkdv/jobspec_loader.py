@@ -11,7 +11,7 @@ from mkdv.job_spec_gen import JobSpecGen
 from mkdv.yaml_loader import YamlLoader
 from yaml.loader import FullLoader
 from mkdv.stream_provider import StreamProvider
-from typing import List
+from typing import List, Tuple
 import json
 import jsonschema
 from jsonschema.validators import Draft4Validator
@@ -22,9 +22,19 @@ class JobspecLoader(object):
         self.prefix_s = []
         self.variables_s = []
         self.dir_s = []
+        self.tool_s = []
+        self.setup_vars_dflt_s = [{}]
+        self.setup_vars_ovr_s = [{}]
+        self.run_vars_dflt_s = [{}]
+        self.run_vars_ovr_s = [{}]
+
+        self.attachments_s = [set()]
+        self.labels_s = [set()]
+        self.parameters_s = [{}]
         
         self.jobspec_s = None
         self.dflt_mkdv_mk = None
+        self.ps = ":"
         self.debug = 1
         
         self.stream_provider = stream_provider
@@ -112,12 +122,52 @@ class JobspecLoader(object):
             print("<-- process_yaml: %s %s" % (str(path), str(prefix)))
             
     def process_job(self, job_s) -> JobSpec:
-        print("job_s: %s" % str(job_s))
+        if self.debug > 0:
+            print("--> process_job %s" % job_s["name"])
+            
         js = JobSpec(job_s["name"], self.fullname(job_s["name"]))
         
         if "description" in job_s.keys():
             js.description = job_s["description"]
+
+        if "tool" in job_s.keys():
+            js.tool = job_s["tool"]
+        elif len(self.tool_s) > 0:
+            js.tool = self.tool_s[-1]
             
+        if "setup-vars" in job_s.keys():
+            dflt, ovr = self.process_vars(
+                job_s["setup-vars"],
+                self.setup_vars_dflt_s[-1],
+                self.setup_vars_ovr_s[-1])
+            js.setupvars = dflt
+        else:
+            js.setupvars = self.setup_vars_dflt_s[-1].copy()
+            
+        if "run-vars" in job_s.keys():
+            dflt, ovr = self.process_vars(
+                job_s["run-vars"],
+                self.run_vars_dflt_s[-1],
+                self.run_vars_ovr_s[-1])
+            js.runvars = dflt
+        else:
+            js.runvars = self.run_vars_dflt_s[-1].copy()
+            
+        js.attachments = self.attachments_s[-1].copy()
+        if "attachments" in job_s.keys():
+            for a in job_s["attachments"]:
+                js.attachments.add(a)
+            
+        js.labels = self.labels_s[-1].copy()
+        if "labels" in job_s.keys():
+            for label in job_s["labels"]:
+                js.labels.add(label)
+                
+        js.parameters = self.parameters_s[-1].copy()
+        if "parameters" in job_s.keys():
+            for key,value in job_s["parameters"].items():
+                js.parameters[key] = value
+
         if "runner" in job_s.keys():
             pass
         else:
@@ -134,12 +184,55 @@ class JobspecLoader(object):
 #        self.process_job_run_vars(job_s, js)
 
 #        self.process_job
+
+        if self.debug > 0:
+            print("<-- process_job")
         return js
     
     def process_job_group(self, job_group_s):
+        if self.debug > 0:
+            print("--> process_job_group")
+            
         if "name" in job_group_s.keys():
             self.prefix_s.append(job_group_s["name"])
-
+            
+        if "tool" in job_group_s.keys():
+            self.tool_s.append(job_group_s["tool"])
+            
+        if "setup-vars" in job_group_s.keys():
+            dflt, ovr = self.process_vars(
+                job_group_s["setup-vars"],
+                self.setup_vars_dflt_s[-1],
+                self.setup_vars_ovr_s[-1])
+            self.setup_vars_dflt_s.append(dflt)
+            self.setup_vars_ovr_s.append(ovr)
+            
+        if "run-vars" in job_group_s.keys():
+            dflt, ovr = self.process_vars(
+                job_group_s["run-vars"],
+                self.setup_vars_dflt_s[-1],
+                self.setup_vars_ovr_s[-1])
+            self.run_vars_dflt_s.append(dflt)
+            self.run_vars_ovr_s.append(ovr)
+            
+        if "attachments" in job_group_s.keys():
+            attachments = self.attachments_s[-1].copy()
+            for a in job_group_s["attachments"]:
+                attachments.add(a)
+            self.attachments_s.append(attachments)
+            
+        if "labels" in job_group_s.keys():
+            labels = self.labels_s[-1].copy()
+            for label in job_group_s["labels"]:
+                labels.add(label)
+            self.labels_s.append(labels)
+            
+        if "parameters" in job_group_s.keys():
+            parameters = self.parameters_s[-1].copy()
+            for key,value in job_group_s["parameters"].items():
+                parameters[key] = value
+            self.parameters_s.append(parameters)
+            
         for j in job_group_s["jobs"]:
             if "name" in j.keys():
                 self.process_job(j)
@@ -150,7 +243,28 @@ class JobspecLoader(object):
         if "name" in job_group_s.keys():
             self.prefix_s.pop()
             
-        pass
+        if "tool" in job_group_s.keys():
+            self.tool_s.pop()
+            
+        if "setup-vars" in job_group_s.keys():
+            self.setup_vars_dflt_s.pop()
+            self.setup_vars_ovr_s.pop()
+            
+        if "run-vars" in job_group_s.keys():
+            self.run_vars_dflt_s.pop()
+            self.run_vars_ovr_s.pop()
+            
+        if "attachments" in job_group_s.keys():
+            self.attachments_s.pop()
+            
+        if "labels" in job_group_s.keys():
+            self.labels_s.pop()
+            
+        if "parameters" in job_group_s.keys():
+            self.parameters_s.pop()
+            
+        if self.debug > 0:
+            print("<-- process_job_group")
     
     def process_jobspec_path(self, path):
         dir = os.path.dirname(path)
@@ -373,6 +487,80 @@ class JobspecLoader(object):
                 self.process_sections(section, ("variables",))
             
         self.variables_s.pop()
+        
+    def process_vars(self,
+                     var_l : List,
+                     var_dflt : dict,
+                     var_ovr : dict) -> Tuple[dict,dict]:
+        """Processes variable map and produces a tuple of <dflt,ovr>"""
+        dflt = {}
+        ovr = var_ovr.copy()
+        
+        # First, process user-specified variables
+        for v in var_l:
+            if "var" in v.keys():
+                # Complex form
+                key = v["var"]
+                if "override" in v.keys() and v["override"]:
+                    override = True
+                else:
+                    override = False
+                
+                if "val" in v.keys():
+                    # Single value
+                    dflt[key] = v["val"]
+                elif "append-path" in v.keys():
+                    if key in dflt.keys():
+                        dflt[key] = dflt[key] + self.ps + v[key]
+                    elif key in var_dflt.keys():
+                        dflt[key] = var_dflt[key] + self.ps + v[key]
+                    else:
+                        dflt[key] = v[key]
+                elif "prepend-path" in v.keys():
+                    if key in dflt.keys():
+                        dflt[key] = v[key] + self.ps + dflt[key]
+                    elif key in var_dflt.keys():
+                        dflt[key] = v[key] + self.ps + var_dflt[key]
+                    else:
+                        dflt[key] = v[key]
+                elif "append-list" in v.keys():
+                    if key in dflt.keys():
+                        if isinstance(dflt[key], list):
+                            dflt[key].append(v[key])
+                        else:
+                            dflt[key] = [dflt[key], v[key]]
+                    else:
+                        dflt[key] = v[key]
+                elif "prepend-list" in v.keys():
+                    if key in dflt.keys():
+                        if isinstance(dflt[key], list):
+                            dflt[key].insert(0, v[key])
+                        else:
+                            dflt[key] = [v[key], dflt[key]]
+                    else:
+                        dflt[key] = v[key]
+                        
+                if override:
+                    ovr[key] = dflt[key]
+            else:
+                key = next(iter(v.keys()))
+                dflt[key] = v[key]
+                
+            
+        
+        # Insert default values
+        for key in var_dflt.keys():
+            if key not in dflt.keys():
+                dflt[key] = var_dflt[key]
+        
+        # Override specified values
+        for key in var_ovr.keys():
+            dflt[key] = var_ovr[key]
+            
+            if key not in ovr.keys():
+                ovr[key] = var_ovr[key]
+            
+        return (dflt, ovr)
             
     
     def process_mkdv_mk_test(self, mkdv_mk, fullname, localname, testdesc):

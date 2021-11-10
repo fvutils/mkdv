@@ -183,11 +183,11 @@ except ImportError:
 # so a file named "default.css" will overwrite the builtin "default.css".
 html_static_path = ['_static']
 
-html_context = {
-    'css_files': [
-        '_static/custom.css',  # overrides for wide tables in RTD theme
-        ],
-    }
+#html_context = {
+#    'css_files': [
+#        '_static/custom.css',  # overrides for wide tables in RTD theme
+#        ],
+#    }
 
 # If not '', a 'Last updated on:' timestamp is inserted at every page bottom,
 # using the given strftime format.
@@ -337,9 +337,9 @@ spelling_lang = 'en_US'
 tokenizer_lang = spelling_lang
 
 # Location of word list.
-spelling_word_list_filename = ["spelling_wordlist.txt",
-                               #"c_symbols.txt"
-]
+#spelling_word_list_filename = ["spelling_wordlist.txt",
+#                               #"c_symbols.txt"
+#]
 
 spelling_ignore_pypi_package_names = False
 spelling_ignore_wiki_words = False

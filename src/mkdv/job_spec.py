@@ -12,6 +12,8 @@ class JobSpec(object):
         self.name = name
         self.fullname = fullname
         self.description = None
+        
+        self.tool = None
        
         # Directory containing the job specification
         self.basedir = None
@@ -21,6 +23,10 @@ class JobSpec(object):
 
         # Cache directory is populated once jobs are known        
         self.cachedir = None
+        
+        self.setupvars = {}
+        
+        self.runvars = {}
         
         # Run variables are associated with the job
         self.variables = {}

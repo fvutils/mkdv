@@ -1,10 +1,8 @@
 # Python dependencies to build the documentation
-pyboolector
 Sphinx>=2.1
 sphinx-rtd-theme
 cairosvg
 # breathe
-pyucis
 sphinxcontrib-makedomain
 sphinxcontrib-spelling
 pyenchant
@@ -12,3 +10,4 @@ sphinx-issues
 sphinx-argparse
 jinja2
 sphinx-jsonschema
+
