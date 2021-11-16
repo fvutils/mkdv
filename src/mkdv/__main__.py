@@ -6,7 +6,6 @@ Created on Dec 27, 2020
 import argparse
 import os
 
-from mkdv.runner import Runner
 import asyncio
 from .cmd_list import cmd_list
 from .cmd_regress import cmd_regress
@@ -24,14 +23,6 @@ def list_tests(args):
     loader = JobspecLoader()
     specs = loader.load(os.getcwd())
     
-    r = Runner(os.getcwd(), specs)
-
-    print("--> run " + str(r))
-    loop = asyncio.get_event_loop()
-    loop.run_until_complete(r.runjobs())
-    print("<-- run")
-    
-   
 def run(args):
     loader = JobspecLoader()
     specs = loader.load(os.getcwd())
@@ -48,7 +39,7 @@ def get_parser():
     
     list_cmd = subparser.add_parser("list",
         help="Discovers and lists available tests")
-    list_cmd.add_argument("-s", "--job-spec", dest="jobspec",
+    list_cmd.add_argument("-s", "--job-spec", dest="jobspec", action="append",
         help="Specifies the job-spec file (mkdv.yaml by default)")
     list_cmd.add_argument("-c", "--job-categories", dest="categories",
         action="store_true", help="Show job categories, not individual jobs")

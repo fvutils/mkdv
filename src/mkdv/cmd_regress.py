@@ -16,7 +16,19 @@ from mkdv.job_spec_filter import JobSpecFilter
 
 def cmd_regress(args):
     loader = JobspecLoader()
-    jobset_s = loader.load(os.getcwd())
+    
+    specfiles = []
+    
+    if hasattr(args, "jobspec") and args.jobspec is not None:
+        specfiles.extend(args.jobspec)
+        
+    if len(specfiles) == 0:
+        if os.path.isfile(os.path.join(os.getcwd(), "mkdv.yaml")):
+            specfiles.append(os.path.join(os.getcwd(), "mkdv.yaml"))
+        else:
+            raise Exception("No specfiles specified")
+    
+    jobset_s = loader.load_specs(specfiles)
 
     regress = os.path.join(os.getcwd(), "regress")
     rundir = os.path.join(regress, 

@@ -5,6 +5,7 @@
         <path>/${PROJECT_DIR_NAME}/src</path>
         <path>/${PROJECT_DIR_NAME}/tests/sys</path>
         <path>/${PROJECT_DIR_NAME}/tests/unit</path>
+        <path>/${PROJECT_DIR_NAME}/packages/fusesoc/fusesoc</path>
     </pydev_pathproperty>
         
     <pydev_property name="org.python.pydev.PYTHON_PROJECT_VERSION">python interpreter</pydev_property>

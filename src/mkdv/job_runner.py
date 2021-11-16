@@ -17,6 +17,9 @@ from colorama import Style
 from typing import List
 from mkdv.job_queue import JobQueue
 from mkdv.job_spec import JobSpec
+from mkdv.job_queue_builder import JobQueueBuilder
+from mkdv.job_yaml_writer import JobYamlWriter
+from mkdv.job_selector import JobSelector
 
 class JobRunner(object):
     
@@ -35,41 +38,18 @@ class JobRunner(object):
         
         # Ensure each test has a unique name
         name_m = {}
-        cache_m = {}
-        cache_id = 0
         n_passed = 0
         n_failed = 0
-        
-        # Map of mkdv.mk path -> job_queue        
-        queue_m = {}
 
+        # Build the job queues based on required setup jobs
+        queue_s = JobQueueBuilder().build(self.specs)
+        
+        # Populate the cachedir of each queue and job
+        for i,q in enumerate(queue_s.queues):
+            q.set_cachedir(os.path.join(self.root, "cache_%d" % i))
+        
         # Ensure we create the report directory first        
         os.makedirs(os.path.join(self.root, "report"), exist_ok=True)
-        
-        # Sort specs into the queues
-        for s in self.specs:
-            if s.mkdv_mk not in queue_m.keys():
-                queue_m[s.mkdv_mk] = JobQueue(s.mkdv_mk)
-            queue_m[s.mkdv_mk].jobs.append(s)
-            
-        active_queues = list(queue_m.values())
-        
-        
-        status = await self.run_builds(active_queues)
-
-        # Propagate the cachedir        
-        for q in active_queues:
-            for j in q.jobs:
-                j.cachedir = q.cachedir
-        
-        # Shove everything back in a single queue
-        run_q = []
-        
-        for q in active_queues:
-            run_q.extend(q.jobs)
-        
-        if not status:
-            return
         
         active_procs = []
 
@@ -79,57 +59,54 @@ class JobRunner(object):
             avail_jobs = self.maxpar
             
         print("maxpar: %d %d" % (self.maxpar, avail_jobs))
+        
+        selector = JobSelector(queue_s)
 
-        while len(run_q) > 0 or len(active_procs) > 0:
+        while selector.avail() or len(active_procs) > 0:
 
             # Launch new jobs while there is quota 
             # and            
-            while len(active_procs) < avail_jobs and len(run_q) > 0:
+            while len(active_procs) < avail_jobs and selector.avail():
                 # TODO: could randomize selection
-                spec = run_q.pop(0)
+                spec = selector.next()
 
-                if spec.rundir is None:
-                    rundir = os.path.join(self.root, spec.fullname)
-                    if spec.fullname in name_m.keys():
-                        # Need to disambiguate
-                        id = name_m[spec.fullname]+1
-                        rundir += "_%04d" % (id,)
-                        name_m[spec.fullname] = id
+                if spec is not None:
+                    if spec.rundir is None:
+                        rundir = os.path.join(self.root, spec.fullname)
+                        if spec.fullname in name_m.keys():
+                            # Need to disambiguate
+                            id = name_m[spec.fullname]+1
+                            rundir += "_%04d" % (id,)
+                            name_m[spec.fullname] = id
+                        else:
+                            name_m[spec.fullname] = 0
+                        
+                        spec.rundir = rundir
+                        
+                    os.makedirs(spec.rundir, exist_ok=True)
+                   
+                    cmdline = []
+                    cmdline.extend([sys.executable, "-m", "mkdv.wrapper"])
+                    cmdline.append(os.path.join(rundir, "job.yaml"))
+                    
+                    self.init_spec(spec)
+    
+                    JobYamlWriter().write(
+                        os.path.join(rundir, "job.yaml"),
+                        spec.cachedir,
+                        spec)
+    
+                    if spec.rerun:
+                        print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s (rerun)" % spec.fullname)
                     else:
-                        name_m[spec.fullname] = 0
+                        print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s" % spec.fullname)
+                    sys.stdout.flush()
+    
+                    proc = await self.backend.launch(
+                        cmdline,
+                        cwd=spec.rundir)
                     
-                    spec.rundir = rundir
-                    
-                os.makedirs(spec.rundir, exist_ok=True)
-               
-#                cmdline = ['srun', '-E']
-#                cmdline = ['srun', '--nodelist=oatfieldx1,oatfieldx2']
-#                cmdline = ['srun']
-                cmdline = []
-                cmdline.extend([sys.executable, "-m", "mkdv.wrapper"])
-                cmdline.append(os.path.join(rundir, "job.yaml"))
-                
-                self.init_spec(spec)
-                
-                self.write_job_yaml(
-                    os.path.join(rundir, "job.yaml"),
-                    spec.cachedir,
-                    spec)
-
-                if spec.rerun:
-                    print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s (rerun)" % spec.fullname)
-                else:
-                    print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s" % spec.fullname)
-                sys.stdout.flush()
-
-#                proc = await asyncio.subprocess.create_subprocess_exec(
-#                    *cmdline,
-#                    cwd=spec.rundir)
-                proc = await self.backend.launch(
-                    cmdline,
-                    cwd=spec.rundir)
-                
-                active_procs.append((proc,spec,None))
+                    active_procs.append((proc,spec,None))
                 
             # Wait for at least once job to complete            
             done, pending = await asyncio.wait(
@@ -147,7 +124,8 @@ class JobRunner(object):
                     if p[2] is not None:
                         p[2].close() # Close stdout save
 
-                    spec = p[1]                        
+                    spec = p[1]
+                    selector.complete(spec)
                     if os.path.isfile(os.path.join(p[1].rundir, "status.txt")):
                         is_passed,msg = self.checkstatus(os.path.join(p[1].rundir, "status.txt"))
                         
@@ -170,7 +148,7 @@ class JobRunner(object):
                                     # Add a '_dbg' suffix
                                     spec.rundir += "_dbg"
                                     spec.rerun = True
-                                    run_q.insert(0, spec)
+                                    selector.rerun(spec)
                         pass
                     else:
                         print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - no status.txt")
@@ -188,72 +166,11 @@ class JobRunner(object):
         tv = tv[0:tv.rfind('.')]
         print(f"{Fore.YELLOW}[Time]{Style.RESET_ALL} %s" % tv)
         
-    def write_job_yaml(
-            self, 
-            job_yaml,
-            cachedir,
-            spec : JobSpec):
-        
-        with open(job_yaml, "w") as fp:
-            fp.write("job:\n");
-            fp.write("    mkfile: %s\n" % spec.mkdv_mk)
-            fp.write("    cachedir: %s\n" % cachedir)
-            fp.write("    reportdir: %s\n" % os.path.join(self.root, "report"))
-            fp.write("    name: %s\n" % spec.localname)
-            fp.write("    qname: %s\n" % spec.fullname)
-            if spec.limit_time is not None:
-                fp.write("    limit-time: %s\n" % str(spec.limit_time))
-            elif self.limit_time is not None:
-                fp.write("    limit-time: %s\n" % str(self.limit_time))
-            if spec.rerun:
-                fp.write("    rerun: true\n")
-            else:
-                fp.write("    rerun: false\n")
-            if len(spec.variables) > 0:
-                fp.write("    variables:\n")
-                for v in spec.variables.keys():
-                    fp.write("        %s: \"%s\"\n" % (v, spec.variables[v]))
-            if spec.description is not None:
-                fp.write("    description: |\n")
-                for line in spec.description.split("\n"):
-                    fp.write("        %s\n" % line)
-
-            if len(spec.labels) > 0:
-                fp.write("    labels:\n")
-                for key in spec.labels.keys():
-                    fp.write("        - %s: %s\n" % (key, spec.labels[key]))
-                    
-            if len(spec.parameters) > 0:
-                fp.write("    parameters:\n")
-                for key in spec.parameters.keys():
-                    fp.write("        - %s: %s\n" % (key, spec.parameters[key]))
-
-            if len(spec.attachments) > 0:
-                fp.write("    attachments:\n")
-                for a in spec.attachments:
-                    fp.write("    - %s: %s\n" % (a[0], a[1]))
-            
-#            fp.write("    rundir: %s\n" % rundir)spec.mkdv_mk)
-#                 cmdline.append("-f")
-#                 cmdline.append(spec.mkdv_mk)
-#                 cmdline.append("MKDV_RUNDIR=" + rundir)
-#                 cmdline.append("MKDV_CACHEDIR=" + queue.cachedir)
-#                 cmdline.append("MKDV_TEST=" + spec.localname)
-#                 cmdline.append("MKDV_JOB=" + spec.localname)
-#                 cmdline.append("MKDV_JOB_QNAME=" + spec.fullname)
-#                 cmdline.append("MKDV_JOB_PARENT=" + spec.fullname[0:-(len(spec.localname)+1)])
-#                 for v in spec.variables.keys():
-#                     cmdline.append(v + "=" + str(spec.variables[v]))
-# #                cmdline.append("MKDV_TEST=" + spec.localname)
-#                 # TODO: separate build/run
-#                 cmdline.append("run")            
-
     def init_spec(self, spec : JobSpec):
         
         if "MKDV_TOOL" not in spec.variables.keys() and self.tool is not None:
             spec.variables["MKDV_TOOL"] = str(self.tool)
             
-                    
     async def run_builds(self, jobs : List[JobQueue]):
         loop = asyncio.get_event_loop()
         build_fails = 0

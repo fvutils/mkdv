@@ -5,10 +5,14 @@ Created on Dec 30, 2020
 '''
 from typing import Tuple, List, Dict, Set
 from mkdv.runners.runner_spec import RunnerSpec
+from mkdv.job_vars import JobVars
 
 class JobSpec(object):
     
     def __init__(self, name, fullname):
+        self.id = 0
+        self.is_setup = False
+        
         self.name = name
         self.fullname = fullname
         self.description = None
@@ -24,9 +28,9 @@ class JobSpec(object):
         # Cache directory is populated once jobs are known        
         self.cachedir = None
         
-        self.setupvars = {}
+        self.setupvars = JobVars()
         
-        self.runvars = {}
+        self.runvars = JobVars()
         
         # Run variables are associated with the job
         self.variables = {}

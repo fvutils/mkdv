@@ -51,7 +51,11 @@ class JobWrapper(object):
         cmdline.append("MKDV_JOB=%s" % localname)
         cmdline.append("MKDV_JOB_QNAME=%s" % qname)
         cmdline.append("MKDV_JOB_PARENT=" + qname[0:-(len(localname)+1)])
-        cmdline.append("_run")
+        
+        if self.job_yaml["is-setup"]:
+            cmdline.append("_setup")
+        else:
+            cmdline.append("_run")
 
         rerun = job["rerun"]
 

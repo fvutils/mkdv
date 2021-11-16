@@ -6,17 +6,16 @@ Created on Nov 6, 2021
 
 class RunnerSpec(object):
     
-    def __init__(self, runner_id, tool_id):
+    def __init__(self, runner_id):
         self.runner_id = runner_id
-        self.tool_id   = tool_id
+        self.tool_id   = None
         self.config = {}
-        # Setup vars are an important part of determining uniqueness
-        self.setup_vars = {}
-        # 
-        self.run_vars = {}
         
     def __hash__(self):
-        return hash(self.runner_id) + hash(self.config)
+        ret = hash(self.runner_id)
+        for k in self.config.keys():
+            ret += hash(k)
+        return ret
     
     def __eq__(self, other):
         if not isinstance(other, RunnerSpec):

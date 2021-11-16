@@ -102,6 +102,9 @@
 	    			"description": "Specifies the tool to use in running jobs under this group",
 	    			"type": "string"
     			},
+				"runner": { 
+					"$ref": "#/defs/runner" 
+				},
 				"run-generators": { 
 					"description": "Generators to execute during run step",
 					"type": "array",

@@ -14,29 +14,42 @@ from mkdv.stream_provider import StreamProvider
 from typing import List, Tuple
 import json
 import jsonschema
-from jsonschema.validators import Draft4Validator
+from mkdv.runners.runner_spec import RunnerSpec
+from copy import deepcopy
+from mkdv.job_vars import JobVars
 
 class JobspecLoader(object):
     
-    def __init__(self, stream_provider : StreamProvider):
+    def __init__(self, 
+                 stream_provider : StreamProvider=None,
+                 runner = None):
         self.prefix_s = []
         self.variables_s = []
         self.dir_s = []
         self.tool_s = []
-        self.setup_vars_dflt_s = [{}]
-        self.setup_vars_ovr_s = [{}]
-        self.run_vars_dflt_s = [{}]
-        self.run_vars_ovr_s = [{}]
+        
+        if runner is None:
+            runner = RunnerSpec("makefile")
+            runner.config["makefile"] = "${MKDV_JOBDIR}/mkdv.mk"
+        
+        self.runner_s = [runner]
+        self.setup_vars_dflt_s = [JobVars()]
+        self.setup_vars_ovr_s = [JobVars()]
+        self.run_vars_dflt_s = [JobVars()]
+        self.run_vars_ovr_s = [JobVars()]
 
         self.attachments_s = [set()]
         self.labels_s = [set()]
-        self.parameters_s = [{}]
+        self.parameters_s = [JobVars()]
         
         self.jobspec_s = None
         self.dflt_mkdv_mk = None
         self.ps = ":"
         self.debug = 1
-        
+
+        if stream_provider is None:
+            stream_provider = StreamProvider()
+            
         self.stream_provider = stream_provider
         self.schema = None
         pass
@@ -53,6 +66,20 @@ class JobspecLoader(object):
             print("<-- JobspecLoader::load %d jobs %d genjobs" % (
                 len(self.jobspec_s.jobspecs), len(self.jobspec_s.jobspec_gen)))
         return self.jobspec_s
+    
+    def load_specs(self, specs : List[str]):
+        self.jobspec_s = JobSpecSet()
+        
+        if self.debug > 0:
+            print("--> JobspecLoader::load_specs")
+
+        for specfile in specs:
+            self.process_yaml(specfile, None)
+
+        if self.debug > 0:
+            print("<-- JobspecLoader::load_specs")
+            
+        return self.jobspec_s    
     
     def find_tests(self, path, prefix):
         # First, see if there is a mkdv.mk here        
@@ -100,7 +127,6 @@ class JobspecLoader(object):
                 self.process_job(data["job"])
             elif key == "job-group":
                 self.process_job_group(data["job-group"])
-                pass
             else:
                 raise Exception("Unknown top-level section %s" % key)
             
@@ -169,10 +195,10 @@ class JobspecLoader(object):
                 js.parameters[key] = value
 
         if "runner" in job_s.keys():
-            pass
+            js.runner_spec = self.process_runner(job_s["runner"])
         else:
-            # TODO: check for a runner from above
-            # If none found, bail out...
+            # Accept the runner from above. It's required to have a default
+            js.runner_spec = deepcopy(self.runner_s[-1])
             pass
         
         self.jobspec_s.jobspecs.append(js)
@@ -198,6 +224,10 @@ class JobspecLoader(object):
             
         if "tool" in job_group_s.keys():
             self.tool_s.append(job_group_s["tool"])
+            
+        if "runner" in job_group_s.keys():
+            runner = self.process_runner(job_group_s["runner"])
+            self.runner_s.append(runner)
             
         if "setup-vars" in job_group_s.keys():
             dflt, ovr = self.process_vars(
@@ -245,6 +275,9 @@ class JobspecLoader(object):
             
         if "tool" in job_group_s.keys():
             self.tool_s.pop()
+            
+        if "runner" in job_group_s.keys():
+            self.runner_s.pop()
             
         if "setup-vars" in job_group_s.keys():
             self.setup_vars_dflt_s.pop()
@@ -493,7 +526,7 @@ class JobspecLoader(object):
                      var_dflt : dict,
                      var_ovr : dict) -> Tuple[dict,dict]:
         """Processes variable map and produces a tuple of <dflt,ovr>"""
-        dflt = {}
+        dflt = JobVars()
         ovr = var_ovr.copy()
         
         # First, process user-specified variables
