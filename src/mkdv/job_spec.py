@@ -6,15 +6,18 @@ Created on Dec 30, 2020
 from typing import Tuple, List, Dict, Set
 from mkdv.runners.runner_spec import RunnerSpec
 from mkdv.job_vars import JobVars
+import yaml
 
 class JobSpec(object):
     
     def __init__(self, name, fullname):
-        self.id = 0
-        self.is_setup = False
-        
         self.name = name
         self.fullname = fullname
+        
+        self.id = 0
+        self.is_setup = False
+        self.rerun = False
+        
         self.description = None
         
         self.tool = None
@@ -28,13 +31,17 @@ class JobSpec(object):
         # Cache directory is populated once jobs are known        
         self.cachedir = None
         
+        # Directory in which Allure reports are placed
+        self.reportdir = None
+        
         self.setupvars = JobVars()
         
         self.runvars = JobVars()
         
-        # Run variables are associated with the job
-        self.variables = {}
-
+        self.setup_generators = {}
+        
+        self.run_generators = {}
+        
         # Attachments, parameters, and labels are used by 
         # the runner to determine what data to save for reporting        
         self.attachments : List[Tuple[str, str]] = []
@@ -44,17 +51,11 @@ class JobSpec(object):
         # Rerun specifies whether this job execution is a rerun
         # of a previous unsuccessful run
                 
-        self.rerun = False
         self.limit = None
         
         # Runner spec contains data about *how* to execute the job
         self.runner_spec : RunnerSpec = None
         
-    def append_run_variables(self, cmdline):
-        """Append job variables to command-line list"""
-        for v in self.variables.keys():
-            cmdline.append(v + "=" + str(self.variables[v]))
-            
     def add_parameter(self, key, val, append=False):
         if key in self.parameters.keys() and append:
             self.parameters[key] += val
@@ -66,4 +67,69 @@ class JobSpec(object):
             self.labels[key] += val
         else:
             self.labels[key] = val
+            
+    def dump(self, s):
+        job_s = {}
+        
+        job_s["name"]      = self.name
+        job_s["fullname"]  = self.fullname
+        job_s["is-setup"] = self.is_setup
+        job_s["rerun"] = self.rerun
+        job_s["description"] = self.description
+        job_s["tool"] = self.tool
+        job_s["basedir"] = self.basedir
+        job_s["rundir"] = self.rundir
+        job_s["cachedir"] = self.cachedir
+        job_s["reportdir"] = self.reportdir
+        
+        setupvars_s = {}
+        for k,v in self.setupvars.items():
+            setupvars_s[k] = v
+        job_s["setupvars"] = setupvars_s
+        
+        runvars_s = {}
+        for k,v in self.runvars.items():
+            runvars_s[k] = v
+        job_s["runvars"] = runvars_s
+        
+        runner_s = {}
+        runner_s["runner-id"] = self.runner_spec.runner_id
+        runner_s["config"] = self.runner_spec.config
+        job_s["runner-spec"] = runner_s
+                
+        
+        job = {"job" : job_s}
+        
+        yaml.dump(job, s)        
+
+    @staticmethod
+    def load(s) -> 'JobSpec':
+        job_yaml = yaml.load(s, yaml.FullLoader)
+        job_s = job_yaml["job"]
+        job = JobSpec(job_s["name"], job_s["fullname"])
+        
+        job.is_setup = job_s["is-setup"]
+        job.rerun = job_s["rerun"]
+        job.description = job_s["description"]
+        job.tool = job_s["tool"]
+        job.basedir = job_s["basedir"]
+        job.rundir = job_s["rundir"]
+        job.cachedir = job_s["cachedir"]
+        job.reportdir = job_s["reportdir"]
+        
+        setupvars_s = job_s["setupvars"]
+        for k,v in setupvars_s.items():
+            job.setupvars[k] = v
+        runvars_s = job_s["runvars"]
+        for k,v in runvars_s.items():
+            job.runvars[k] = v
+
+        runner_s = job_s["runner-spec"]
+        job.runner_spec = RunnerSpec(runner_s["runner-id"])
+        job.runner_spec.config = runner_s["config"]
+
+        
+        return job
+    
+    
 

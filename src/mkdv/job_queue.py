@@ -12,6 +12,7 @@ class JobQueue(object):
         self.build_run = False
         self.build_pass = False
         self.cachedir = None
+        self.reportdir = None
         self.jobs = []
         
     def append(self, j : JobSpec):
@@ -21,5 +22,10 @@ class JobQueue(object):
         self.cachedir = cachedir
         for j in self.jobs:
             j.cachedir = cachedir
+            
+    def set_reportdir(self, reportdir):
+        self.cachedir = reportdir
+        for j in self.jobs:
+            j.reportdir = reportdir
         
     

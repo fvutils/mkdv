@@ -17,6 +17,7 @@ import jsonschema
 from mkdv.runners.runner_spec import RunnerSpec
 from copy import deepcopy
 from mkdv.job_vars import JobVars
+from mkdv.generator_spec import GeneratorSpec
 
 class JobspecLoader(object):
     
@@ -37,6 +38,9 @@ class JobspecLoader(object):
         self.setup_vars_ovr_s = [JobVars()]
         self.run_vars_dflt_s = [JobVars()]
         self.run_vars_ovr_s = [JobVars()]
+        
+        self.setup_generators = [{}]
+        self.run_generators = [{}]
 
         self.attachments_s = [set()]
         self.labels_s = [set()]
@@ -152,10 +156,11 @@ class JobspecLoader(object):
             print("--> process_job %s" % job_s["name"])
             
         js = JobSpec(job_s["name"], self.fullname(job_s["name"]))
+        js.basedir = self.dir_s[-1]
         
         if "description" in job_s.keys():
             js.description = job_s["description"]
-
+            
         if "tool" in job_s.keys():
             js.tool = job_s["tool"]
         elif len(self.tool_s) > 0:
@@ -203,7 +208,7 @@ class JobspecLoader(object):
         
         self.jobspec_s.jobspecs.append(js)
         
-#        self.process_job_run_generators(job_s, js)
+        self.process_job_run_generators(job_s, js)
 #        self.process_job_setup_generators(job_s, js)
         
 #        self.process_job_setup_vars(job_s, js)
@@ -214,6 +219,24 @@ class JobspecLoader(object):
         if self.debug > 0:
             print("<-- process_job")
         return js
+    
+    def process_job_run_generators(self, job_s, js):
+        # First, bring forward run generators from the stack
+        
+        rg = {}
+        
+        if "run-generators" in job_s.keys():
+            for rg_s in job_s["run-generators"]:
+                g_id = rg_s["id"]
+                gen_s = GeneratorSpec(g_id)
+                if "config" in rg_s.keys():
+                    gen_s.config = rg_s["config"].copy()
+                
+                if g_id in rg.keys():
+                    rg[g_id].append(gen_s)
+                
+        rg = self.run_generators[-1].copy()
+                
     
     def process_job_group(self, job_group_s):
         if self.debug > 0:

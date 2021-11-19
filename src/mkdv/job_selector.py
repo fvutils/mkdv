@@ -20,6 +20,7 @@ class JobSelector(object):
         ret = False
         for i,q in enumerate(self.queue_s.queues):
             if self.queue_idx[i] < len(q.jobs):
+                print("queue_idx[%d]=%d ; len(q.jobs)=%d" % (i, self.queue_idx[i], len(q.jobs)))
                 ret = True
                 break
             
@@ -42,15 +43,20 @@ class JobSelector(object):
                         if self.queue_idx[i] == 0:
                             self.queue_dep_s[i].add(job)
                         self.queue_idx[i] += 1
+                else:
+                    print("Waiting for %s" % str(self.queue_dep_s[i]))
                         
                 if job is not None:
                     break
-            
+
+        print("Return job: %s" % str(job))            
         return job
     
     def complete(self, j : JobSpec):
+        print("complete")
         for i,d in enumerate(self.queue_dep_s):
             if j in d:
+                print("Removing job")
                 d.remove(j)
                 
                 # TODO: invalidate dependent jobs

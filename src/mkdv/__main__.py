@@ -13,6 +13,7 @@ from .cmd_run import cmd_run
 import sys
 from mkdv.jobspec_loader import JobspecLoader
 from mkdv import backends
+from mkdv.cmd_files import cmd_files
 
 
 def mkfile(args):
@@ -45,12 +46,29 @@ def get_parser():
         action="store_true", help="Show job categories, not individual jobs")
     list_cmd.set_defaults(func=cmd_list)
     
+    files_cmd = subparser.add_parser("files",
+        help="Returns files referenced by a specific core target")
+    files_cmd.add_argument("-l", "--library-path",
+        dest="library_path", action="append",
+        help="Specifies a library path")
+    files_cmd.add_argument("-t", "--file-type",
+        dest="file_type", action="append",
+        help="Specifies the file-type identifier to query")
+    files_cmd.add_argument("vlnv",
+        help="Specifies the identifier of the core to query")
+    files_cmd.add_argument("target",
+        help="Specifies the core target to query")
+    files_cmd.set_defaults(func=cmd_files)
+    
     mkfile_cmd = subparser.add_parser("mkfile",
         help="Returns the path to dv.mk")
     mkfile_cmd.set_defaults(func=mkfile)
     
     regress_cmd = subparser.add_parser("regress",
         help="Run a series of tests")
+    regress_cmd.add_argument("-l", "--library-path", 
+        dest="library_path", action="append",
+        help="Specifies a directory containing libraries specified via .core files")
     regress_cmd.add_argument("-s", "--test-spec", 
         dest="test_specs", action="append",
         help="Specifies a file containing a test-spec to use")
@@ -92,6 +110,9 @@ def get_parser():
     return parser
 
 def main():
+    from .mkdv_py import in_main
+    
+    in_main()
     parser = get_parser()
     
     args = parser.parse_args()

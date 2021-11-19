@@ -13,7 +13,10 @@ class Runner(object):
         """Returns job specifications"""
         return None
     
-    def setup(self, spec : RunnerSpec):
+    def validate(self, spec : JobSpec):
+        pass
+    
+    def setup(self, spec : JobSpec):
         pass
     
     def run(self, spec : JobSpec):
@@ -25,4 +28,5 @@ class Runner(object):
            Not all runners need this. Might want a base mechanism that runs 
            the generator inline...
         """
+        pass
     

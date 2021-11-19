@@ -44,12 +44,13 @@ class JobRunner(object):
         # Build the job queues based on required setup jobs
         queue_s = JobQueueBuilder().build(self.specs)
         
+        # Ensure we create the report directory first        
+        os.makedirs(os.path.join(self.root, "report"), exist_ok=True)
+        
         # Populate the cachedir of each queue and job
         for i,q in enumerate(queue_s.queues):
             q.set_cachedir(os.path.join(self.root, "cache_%d" % i))
-        
-        # Ensure we create the report directory first        
-        os.makedirs(os.path.join(self.root, "report"), exist_ok=True)
+            q.set_reportdir(os.path.join(self.root, "report"))
         
         active_procs = []
 
@@ -90,16 +91,17 @@ class JobRunner(object):
                     cmdline.append(os.path.join(rundir, "job.yaml"))
                     
                     self.init_spec(spec)
-    
-                    JobYamlWriter().write(
-                        os.path.join(rundir, "job.yaml"),
-                        spec.cachedir,
-                        spec)
+
+                    with open(os.path.join(rundir, "job.yaml"), "w") as fp:
+                        spec.dump(fp)
     
                     if spec.rerun:
                         print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s (rerun)" % spec.fullname)
                     else:
-                        print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s" % spec.fullname)
+                        if spec.is_setup:
+                            print(f"{Fore.YELLOW}[StartSetup]{Style.RESET_ALL} %s" % spec.basedir)
+                        else:
+                            print(f"{Fore.YELLOW}[Start]{Style.RESET_ALL} %s" % spec.fullname)
                     sys.stdout.flush()
     
                     proc = await self.backend.launch(
@@ -107,6 +109,9 @@ class JobRunner(object):
                         cwd=spec.rundir)
                     
                     active_procs.append((proc,spec,None))
+                else:
+                    # Need to wait for some jobs to complete
+                    break
                 
             # Wait for at least once job to complete            
             done, pending = await asyncio.wait(
@@ -130,10 +135,13 @@ class JobRunner(object):
                         is_passed,msg = self.checkstatus(os.path.join(p[1].rundir, "status.txt"))
                         
                         if is_passed:
-                            print(f"{Fore.GREEN}[PASS]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
+                            if spec.is_setup:
+                                print(f"{Fore.GREEN}[PASSSetup]{Style.RESET_ALL} %s" % p[1].basedir)
+                            else:
+                                print(f"{Fore.GREEN}[PASS]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
                             n_passed += 1
                         else:
-                            if spec.rerun:
+                            if spec.rerun and not spec.is_setup:
                                 print(f"{Fore.YELLOW}[ExpFail]{Style.RESET_ALL} " + p[1].fullname + " - " + msg + " (rerun)")
                             else:
                                 print(f"{Fore.RED}[FAIL]{Style.RESET_ALL} " + p[1].fullname + " - " + msg)
@@ -167,9 +175,9 @@ class JobRunner(object):
         print(f"{Fore.YELLOW}[Time]{Style.RESET_ALL} %s" % tv)
         
     def init_spec(self, spec : JobSpec):
-        
-        if "MKDV_TOOL" not in spec.variables.keys() and self.tool is not None:
-            spec.variables["MKDV_TOOL"] = str(self.tool)
+#        if "MKDV_TOOL" not in spec.variables.keys() and self.tool is not None:
+#            spec.variables["MKDV_TOOL"] = str(self.tool)
+        pass
             
     async def run_builds(self, jobs : List[JobQueue]):
         loop = asyncio.get_event_loop()

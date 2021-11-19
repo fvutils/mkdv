@@ -7,6 +7,8 @@ import argparse
 
 import yaml
 from mkdv.wrapper.job_wrapper import JobWrapper
+from mkdv.job_spec import JobSpec
+from mkdv.job_yaml_reader import JobYamlReader
 
 
 def getparser():
@@ -22,10 +24,10 @@ def main():
     args = parser.parse_args()
 
     with open(args.job_yaml, "r") as fp:
-        job_yaml = yaml.load(fp, yaml.FullLoader)
+        job  = JobSpec.load(fp)
     
-    job = JobWrapper(job_yaml)
-    job.run()
+    job_w = JobWrapper(job)
+    job_w.run()
     
 
 if __name__ == "__main__":
