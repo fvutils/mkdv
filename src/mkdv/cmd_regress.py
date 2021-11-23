@@ -12,6 +12,7 @@ from mkdv.jobspec_loader import JobspecLoader
 from mkdv.job_spec_gen_loader import JobSpecGenLoader
 from mkdv import backends
 from mkdv.job_spec_filter import JobSpecFilter
+from mkdv.job_count_expander import JobCountExpander
 
 
 def cmd_regress(args):
@@ -52,11 +53,19 @@ def cmd_regress(args):
         args.exclude if args.exclude is not None else []
         ).filter(specs)
         
+    # Expand any jobs that have a count >1
+    specs_exp = JobCountExpander.expand(specs)
+    
+    # Now, assign each unique job an id and seed
+    for i,s in enumerate(specs_exp):
+        s.id = i
+        s.seed = i
+        
     os.makedirs(rundir, exist_ok=True)
     
     backend = backends.backend(args.backend)
     
-    r = JobRunner(rundir, backend, specs)
+    r = JobRunner(rundir, backend, specs_exp)
     
     if hasattr(args, "limit_time") and args.limit_time is not None:
         r.limit_time = args.limit_time

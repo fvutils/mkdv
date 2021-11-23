@@ -7,14 +7,28 @@ from typing import Tuple, List, Dict, Set
 from mkdv.runners.runner_spec import RunnerSpec
 from mkdv.job_vars import JobVars
 import yaml
+from mkdv.job_limit_spec import JobLimitSpec
 
 class JobSpec(object):
     
     def __init__(self, name, fullname):
-        self.name = name
-        self.fullname = fullname
         
+        # Name is what the user specified
+        self.name = name
+
+        # Fullname encodes the full path within the
+        # job suite, as well as an index for jobs
+        # run multiple times        
+        self.fullname = fullname
+
+        # Numeric identifier for the job
         self.id = 0
+        
+        self.seed = 0
+
+        # A >1 count comes from the testlist        
+        self.count = 1
+        
         self.is_setup = False
         self.rerun = False
         
@@ -70,7 +84,9 @@ class JobSpec(object):
             
     def dump(self, s):
         job_s = {}
-        
+
+        job_s["id"]        = self.id
+        job_s["seed"]      = self.seed        
         job_s["name"]      = self.name
         job_s["fullname"]  = self.fullname
         job_s["is-setup"] = self.is_setup
@@ -92,6 +108,11 @@ class JobSpec(object):
             runvars_s[k] = v
         job_s["runvars"] = runvars_s
         
+        if self.limit is None:
+            job_s["limit"] = None
+        else:
+            job_s["limit"] = self.limit.dump()
+        
         runner_s = {}
         runner_s["runner-id"] = self.runner_spec.runner_id
         runner_s["config"] = self.runner_spec.config
@@ -107,6 +128,9 @@ class JobSpec(object):
         job_yaml = yaml.load(s, yaml.FullLoader)
         job_s = job_yaml["job"]
         job = JobSpec(job_s["name"], job_s["fullname"])
+        
+        job.id = job_s["id"]
+        job.seed = job_s["seed"]
         
         job.is_setup = job_s["is-setup"]
         job.rerun = job_s["rerun"]
@@ -127,7 +151,10 @@ class JobSpec(object):
         runner_s = job_s["runner-spec"]
         job.runner_spec = RunnerSpec(runner_s["runner-id"])
         job.runner_spec.config = runner_s["config"]
-
+        
+        if "limit" in job_s.keys() and job_s["limit"] is not None:
+            job_s.limit = JobLimitSpec()
+            job_s.limit.load(job_s["limit"])
         
         return job
     

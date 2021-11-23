@@ -8,7 +8,8 @@ import subprocess
 
 from mkdv.job_spec import JobSpec
 from mkdv.runners.runner import Runner
-
+from mkdv.runners.allure_reporter import AllureReporter
+from allure_commons.model2 import Status
 
 class RunnerMake(Runner):
     
@@ -31,10 +32,13 @@ class RunnerMake(Runner):
     def run_job(self, spec):
         cmdline = []
         
-        mkfile = os.path.join(spec.basedir, "mkdv.mk")
+        reporter = AllureReporter(spec)
         
+        mkfile = os.path.join(spec.basedir, "mkdv.mk")
+       
+        if spec.limit is not None and spec.limit.time is not None:
+            cmdline.extend(["timeout", spec.limit.time])
 #         if "limit-time" in job.keys():
-#             cmdline.extend(["timeout", str(job["limit-time"])])
         cmdline.extend(["make", "-f"])
         cmdline.append(mkfile)
         cmdline.append("MKDV_RUNDIR=%s" % os.getcwd())
@@ -43,6 +47,7 @@ class RunnerMake(Runner):
         cmdline.append("MKDV_JOB=%s" % spec.name)
         cmdline.append("MKDV_JOB_QNAME=%s" % spec.fullname)
         cmdline.append("MKDV_JOB_PARENT=" + spec.fullname[0:-(len(spec.name)+1)])
+        cmdline.append("MKDV_SEED=%d" % spec.seed)
         
         if spec.tool is not None:
             cmdline.append("MKDV_TOOL=%s" % spec.tool)
@@ -57,7 +62,8 @@ class RunnerMake(Runner):
                 cmdline.append("%s=%s" % (k, v))
         
         job_log = open("job.log", "w")
-        
+
+        reporter.start()        
         proc = subprocess.Popen(
             cmdline,
             stdout=subprocess.PIPE,
@@ -73,16 +79,15 @@ class RunnerMake(Runner):
         job_log.close()
         
         code = proc.wait()
-        
+
+        status = None        
         if code == 0:
             # Setup jobs don't automatically produce a status.txt
             if spec.is_setup:
                 with open("status.txt", "w") as fp:
                     fp.write("PASS: ")
             elif not os.path.isfile("status.txt"):
-#                    if test_case is not None:
-#                        test_case.status = Status.FAILED
-                pass
+                status = Status.FAILED
             else:
                 with open("status.txt", "r") as fp:
                     pass_count = 0
@@ -94,19 +99,18 @@ class RunnerMake(Runner):
                             fail_count += 1
 
 #                    if test_case is not None:
-#                        if pass_count > 0 and fail_count == 0:
-#                            test_case.status = Status.PASSED
-#                        else:
-#                            test_case.status = Status.FAILED
+                    if pass_count > 0 and fail_count == 0:
+                        status = Status.PASSED
+                    else:
+                        status = Status.FAILED
         elif code == 124: # Timeout
-#            with open("job.log", "a") as fp:
-#                fp.write("MKDV Error: Timeout after %s\n" % (
-#                    str(job["limit-time"])))
-            pass
+            with open("job.log", "a") as fp:
+                fp.write("MKDV Error: Timeout after %s\n" % (str(spec.limit.time)))
         else:
-#            if test_case is not None:
-#                test_case.status = Status.FAILED        
-            pass
+            status = Status.FAILED        
+        
+        reporter.done(status, 
+                      os.path.join(os.getcwd(), "job.log"))
         
     
     def generate(self):

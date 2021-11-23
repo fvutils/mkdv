@@ -18,6 +18,7 @@ from mkdv.runners.runner_spec import RunnerSpec
 from copy import deepcopy
 from mkdv.job_vars import JobVars
 from mkdv.generator_spec import GeneratorSpec
+from mkdv.job_limit_spec import JobLimitSpec
 
 class JobspecLoader(object):
     
@@ -28,6 +29,7 @@ class JobspecLoader(object):
         self.variables_s = []
         self.dir_s = []
         self.tool_s = []
+        self.count_s = [1]
         
         if runner is None:
             runner = RunnerSpec("makefile")
@@ -44,6 +46,7 @@ class JobspecLoader(object):
 
         self.attachments_s = [set()]
         self.labels_s = [set()]
+        self.limit_s = []
         self.parameters_s = [JobVars()]
         
         self.jobspec_s = None
@@ -105,12 +108,14 @@ class JobspecLoader(object):
         
         if dir == "":
             dir = os.getcwd()
-            
-        print("process_yaml: dir=%s" % dir)
+
+        if self.debug > 0:            
+            print("process_yaml: dir=%s" % dir)
         self.dir_s.append(dir)
         data = None
         
-        print("path=%s dir=%s" % (path, dir))
+        if self.debug > 0:            
+            print("path=%s dir=%s" % (path, dir))
         
         fp = self.stream_provider.open(path, "r")
         
@@ -174,6 +179,12 @@ class JobspecLoader(object):
             js.tool = job_s["tool"]
         elif len(self.tool_s) > 0:
             js.tool = self.tool_s[-1]
+            
+        if "count" in job_s.keys():
+            js.count = job_s["count"]
+        else:
+            js.count = self.count_s[-1]
+        print("Set job count: %d" % js.count)
 
         if "setup-vars" in job_s.keys():
             dflt, ovr = self.process_vars(
@@ -220,6 +231,11 @@ class JobspecLoader(object):
             js.runner_spec = deepcopy(self.runner_s[-1])
             pass
         
+        if "limit" in job_s.keys():
+            js.limit = self.process_limit(job_s["limit"])
+        elif len(self.limit_s) > 0:
+            js.limit = self.limit_s[-1].copy()
+        
         self.jobspec_s.jobspecs.append(js)
         
         self.process_job_run_generators(job_s, js)
@@ -250,7 +266,21 @@ class JobspecLoader(object):
                     rg[g_id].append(gen_s)
                 
         rg = self.run_generators[-1].copy()
-                
+        
+    def process_runner(self, runner_s):
+        raise Exception("Unhandled runner spec")
+        pass
+    
+    def process_limit(self, limit_s):
+        if len(self.limit_s) > 0:
+            limit = self.limit_s[-1].copy()
+        else:
+            limit = JobLimitSpec()
+            
+        if "time" in limit_s.keys():
+            limit.time = limit_s["time"]
+            
+        return limit
     
     def process_job_group(self, job_group_s):
         if self.debug > 0:
@@ -259,12 +289,20 @@ class JobspecLoader(object):
         if "name" in job_group_s.keys():
             self.prefix_s.append(job_group_s["name"])
             
+        if "count" in job_group_s.keys():
+            print("Set group count: %d" % job_group_s["count"])
+            self.count_s.append(job_group_s["count"])
+            
         if "tool" in job_group_s.keys():
             self.tool_s.append(job_group_s["tool"])
             
         if "runner" in job_group_s.keys():
             runner = self.process_runner(job_group_s["runner"])
             self.runner_s.append(runner)
+            
+        if "limit" in job_group_s.keys():
+            limit = self.process_limit(job_group_s["limit"])
+            self.limit_s.append(limit)
             
         if "setup-vars" in job_group_s.keys():
             dflt, ovr = self.process_vars(
@@ -313,11 +351,17 @@ class JobspecLoader(object):
         if "name" in job_group_s.keys():
             self.prefix_s.pop()
             
+        if "count" in job_group_s.keys():
+            self.count_s.pop()
+            
         if "tool" in job_group_s.keys():
             self.tool_s.pop()
             
         if "runner" in job_group_s.keys():
             self.runner_s.pop()
+            
+        if "limit" in job_group_s.keys():
+            self.limit_s.pop()
             
         if "setup-vars" in job_group_s.keys():
             self.setup_vars_dflt_s.pop()

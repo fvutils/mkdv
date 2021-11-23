@@ -27,6 +27,10 @@
 					"description": "Test leafname",
 					"type": "string"
 				},
+				"count": {
+					"description": "Specifies the number of times this just must be run",
+					"type": "number"
+				},
 	    		"tool": {
 	    			"description": "Specifies the tool to use in running this job",
 	    			"type": "string"
@@ -37,6 +41,9 @@
 				},
 				"runner": { 
 					"$ref": "#/defs/runner" 
+				},
+				"limit": {
+					"$ref": "#/defs/limits-spec"
 				},
 				"run-generators": { 
 					"type": "array",
@@ -98,12 +105,19 @@
 	    			"description": "Specify the name of this group (optional)",
 	    			"type": "string"
 	    		},
+				"count": {
+					"description": "Specifies the number of times jobs in this group will be run",
+					"type": "number"
+				},
 	    		"tool": {
 	    			"description": "Specifies the tool to use in running jobs under this group",
 	    			"type": "string"
     			},
 				"runner": { 
 					"$ref": "#/defs/runner" 
+				},
+				"limit": {
+					"$ref": "#/defs/limits-spec"
 				},
 				"run-generators": { 
 					"description": "Generators to execute during run step",
@@ -229,6 +243,17 @@
 	    		},
 	    		"config": {
 	    			"type": "object"
+	    		}
+	    	}
+	    },
+	    "limits-spec": {
+	    	"title": "Limits Specification",
+	    	"$$target": "#/defs/limits-spec",
+	    	"description": "Specification of job limits",
+	    	"type": "object",
+	    	"properties": {
+	    		"time": {
+	    			"type": "string"
 	    		}
 	    	}
 	    },
