@@ -19,12 +19,14 @@ from copy import deepcopy
 from mkdv.job_vars import JobVars
 from mkdv.generator_spec import GeneratorSpec
 from mkdv.job_limit_spec import JobLimitSpec
+from fusesoc.vlnv import Vlnv
 
 class JobspecLoader(object):
     
     def __init__(self, 
                  stream_provider : StreamProvider=None,
-                 runner = None):
+                 runner = None,
+                 core_mgr = None):
         self.prefix_s = []
         self.variables_s = []
         self.dir_s = []
@@ -34,6 +36,8 @@ class JobspecLoader(object):
         if runner is None:
             runner = RunnerSpec("makefile")
             runner.config["makefile"] = "${MKDV_JOBDIR}/mkdv.mk"
+            
+        self.core_mgr = core_mgr
         
         self.runner_s = [runner]
         self.setup_vars_dflt_s = [JobVars()]
@@ -344,6 +348,8 @@ class JobspecLoader(object):
                 self.process_job_group(j)
             elif "name" in j.keys():
                 self.process_job(j)
+            elif "vlnv" in j.keys():
+                self.process_vlnv_jobspec_path(j)
             elif "path" in j.keys():
                 # TODO: need to pass along context path
                 self.process_jobspec_path(j["path"])
@@ -382,6 +388,29 @@ class JobspecLoader(object):
             
         if self.debug > 0:
             print("<-- process_job_group")
+            
+    def process_vlnv_jobspec_path(self, vlnv_s):
+        if self.core_mgr is None:
+            raise Exception("No core-manager supplied to handle VLNV %s" % vlnv_s["vlnv"])
+        
+        flags = { "is_toplevel": True }
+        
+        if "target" in vlnv_s.keys():
+            flags["target"] = vlnv_s["target"]
+        
+        core = self.core_mgr.get_depends(
+            Vlnv(vlnv_s["vlnv"]),
+            flags=flags)
+        
+        for c in core:
+            
+            c_files = c.get_files(flags)
+            
+            for f in c_files:
+                if f['file_type'] == "testPlanYaml":
+                    full_path = os.path.join(c.core_root, f['name'])
+                    self.process_jobspec_path(full_path)
+            
     
     def process_jobspec_path(self, path):
         if self.debug > 0:

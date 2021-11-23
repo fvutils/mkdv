@@ -10,16 +10,32 @@ import os
 from mkdv.job_runner import JobRunner
 from mkdv.jobspec_loader import JobspecLoader
 from mkdv.job_spec_gen_loader import JobSpecGenLoader
-from mkdv import backends
+from mkdv import backends, get_packages_dir
 from mkdv.job_spec_filter import JobSpecFilter
 from mkdv.job_count_expander import JobCountExpander
+from mkdv.core_manager_w import CoreManagerW
+from fusesoc.librarymanager import Library
 
 
 def cmd_regress(args):
-    loader = JobspecLoader()
     
     specfiles = []
     
+    cm = CoreManagerW()
+    
+    packages_dir = get_packages_dir()
+    cm.add_library(Library("packages", packages_dir))
+    
+    cwd_is_lib = False
+    if args.library_path is not None:
+        for path in args.library_path:
+            if os.getcwd().startswith(path):
+                cwd_is_lib = True
+            cm.add_library(Library(os.path.basename(path), path))
+        
+    if not cwd_is_lib:
+        cm.add_library(Library(os.path.basename(os.getcwd()), os.getcwd()))
+
     if hasattr(args, "jobspecs") and args.jobspecs is not None:
         specfiles.extend(args.jobspecs)
         
@@ -28,6 +44,8 @@ def cmd_regress(args):
             specfiles.append(os.path.join(os.getcwd(), "mkdv.yaml"))
         else:
             raise Exception("No specfiles specified")
+        
+    loader = JobspecLoader(core_mgr=cm)
     
     jobset_s = loader.load_specs(specfiles)
 
@@ -37,7 +55,7 @@ def cmd_regress(args):
     gendir = os.path.join(rundir, "gen")
     
     specs = jobset_s.jobspecs.copy()
-    gen_specs = []    
+    gen_specs = []
     
 
     for s in jobset_s.jobspec_gen:
