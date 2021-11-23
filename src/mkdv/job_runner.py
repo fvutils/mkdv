@@ -31,6 +31,7 @@ class JobRunner(object):
         self.rerun_failing = True
         self.limit_time = None
         self.tool = None
+        self.debug = False
         
     async def runjobs(self):
         start = datetime.datetime.now()
@@ -58,8 +59,9 @@ class JobRunner(object):
             avail_jobs = self.backend.quota()
         else:
             avail_jobs = self.maxpar
-            
-        print("maxpar: %d %d" % (self.maxpar, avail_jobs))
+        
+        if self.debug:    
+            print("maxpar: %d %d" % (self.maxpar, avail_jobs))
         
         selector = JobSelector(queue_s)
 
@@ -105,6 +107,7 @@ class JobRunner(object):
                     sys.stdout.flush()
     
                     proc = await self.backend.launch(
+                        spec,
                         cmdline,
                         cwd=spec.rundir)
                     

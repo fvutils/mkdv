@@ -19,8 +19,8 @@ def cmd_regress(args):
     
     specfiles = []
     
-    if hasattr(args, "jobspec") and args.jobspec is not None:
-        specfiles.extend(args.jobspec)
+    if hasattr(args, "jobspecs") and args.jobspecs is not None:
+        specfiles.extend(args.jobspecs)
         
     if len(specfiles) == 0:
         if os.path.isfile(os.path.join(os.getcwd(), "mkdv.yaml")):

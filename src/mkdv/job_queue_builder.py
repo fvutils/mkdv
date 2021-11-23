@@ -11,6 +11,34 @@ from copy import deepcopy
 from simplesat.utils.graph import toposort
 from mkdv.job_queue_set import JobQueueSet
 
+class JobSetupW(object):
+    
+    def __init__(self, js):
+        self.js = js
+        
+    def __hash__(self):
+        ret = 0
+        for key,val in self.js.setupvars.items():
+            ret += hash(key)
+            if isinstance(val, list):
+                for it in list:
+                    ret += hash(it)
+            else:
+                ret += hash(val)
+        if self.js.tool is not None:
+            ret += hash(self.js.tool)
+
+        return ret
+    
+    def __eq__(self, other):
+        if not isinstance(other, JobSetupW):
+            return False
+        
+        eq = (self.js.tool is None and other.js.tool is None) or (self.js.tool == other.js.tool)
+        eq &= self.js.setupvars == other.js.setupvars
+        
+        return eq
+
 class JobQueueBuilder(object):
     
     def __init__(self):
@@ -36,14 +64,16 @@ class JobQueueBuilder(object):
                 q.append(setup_j)
                 q.append(j)
                 queue_s.queues.append(q)
-                rq = {j.setupvars : q}
+                print("setupvars.type=%s" % str(type(j.setupvars)))
+                rq = {JobSetupW(j) : q}
                 runner_m[j.runner_spec] = rq
                 total_job_l.append(j)
             else:
                 rq = runner_m[j.runner_spec]
-                if j.setupvars in rq.keys():
+                jsw = JobSetupW(j)
+                if jsw in rq.keys():
                     j.id = len(total_job_l)
-                    jq = rq[j.setupvars]
+                    jq = rq[jsw]
                     dep_m[j.id] = {jq.jobs[0].id}
                     jq.append(j)
                     total_job_l.append(j)
@@ -59,7 +89,7 @@ class JobQueueBuilder(object):
                     q.append(setup_j)
                     q.append(j)
                     queue_s.queues.append(q)
-                    rq[j.setupvars] = q
+                    rq[jsw] = q
                     total_job_l.append(j)
 
         res = toposort(dep_m)

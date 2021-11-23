@@ -20,3 +20,9 @@ class JobVars(dict):
                 ret += hash(val)
         return ret
     
+    def copy(self):
+        ret = JobVars()
+        for k,v in self.items():
+            ret[k] = v
+        return ret
+    

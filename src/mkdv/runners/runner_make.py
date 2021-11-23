@@ -43,6 +43,9 @@ class RunnerMake(Runner):
         cmdline.append("MKDV_JOB=%s" % spec.name)
         cmdline.append("MKDV_JOB_QNAME=%s" % spec.fullname)
         cmdline.append("MKDV_JOB_PARENT=" + spec.fullname[0:-(len(spec.name)+1)])
+        
+        if spec.tool is not None:
+            cmdline.append("MKDV_TOOL=%s" % spec.tool)
 
         if spec.is_setup:
             cmdline.append("_setup")

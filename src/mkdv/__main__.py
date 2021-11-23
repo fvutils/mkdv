@@ -48,16 +48,20 @@ def get_parser():
     
     files_cmd = subparser.add_parser("files",
         help="Returns files referenced by a specific core target")
+    files_cmd.add_argument("-i", "--include",
+        action="store_true", 
+        help="Report include paths instead of file paths")
     files_cmd.add_argument("-l", "--library-path",
         dest="library_path", action="append",
         help="Specifies a library path")
+    files_cmd.add_argument("-e", "--target",
+        dest="target",
+        help="Specifies the entry target (default if not specified)")
     files_cmd.add_argument("-t", "--file-type",
         dest="file_type", action="append",
         help="Specifies the file-type identifier to query")
     files_cmd.add_argument("vlnv",
         help="Specifies the identifier of the core to query")
-    files_cmd.add_argument("target",
-        help="Specifies the core target to query")
     files_cmd.set_defaults(func=cmd_files)
     
     mkfile_cmd = subparser.add_parser("mkfile",
@@ -69,8 +73,8 @@ def get_parser():
     regress_cmd.add_argument("-l", "--library-path", 
         dest="library_path", action="append",
         help="Specifies a directory containing libraries specified via .core files")
-    regress_cmd.add_argument("-s", "--test-spec", 
-        dest="test_specs", action="append",
+    regress_cmd.add_argument("-s", "--job-spec", 
+        dest="jobspecs", action="append",
         help="Specifies a file containing a test-spec to use")
     regress_cmd.add_argument("-t", "--tool", dest="tool",
         help="Specify the tool to run (defaults to makefile setting)")

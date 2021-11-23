@@ -69,6 +69,7 @@ class JobspecLoader(object):
         if self.debug > 0:
             print("<-- JobspecLoader::load %d jobs %d genjobs" % (
                 len(self.jobspec_s.jobspecs), len(self.jobspec_s.jobspec_gen)))
+            
         return self.jobspec_s
     
     def load_specs(self, specs : List[str]):
@@ -101,8 +102,16 @@ class JobspecLoader(object):
             print("--> process_yaml: %s %s" % (str(path), str(prefix)))
 
         dir = os.path.dirname(path)
+        
+        if dir == "":
+            dir = os.getcwd()
+            
+        print("process_yaml: dir=%s" % dir)
         self.dir_s.append(dir)
         data = None
+        
+        print("path=%s dir=%s" % (path, dir))
+        
         fp = self.stream_provider.open(path, "r")
         
         data = yaml.load(fp, Loader=FullLoader)
@@ -165,16 +174,21 @@ class JobspecLoader(object):
             js.tool = job_s["tool"]
         elif len(self.tool_s) > 0:
             js.tool = self.tool_s[-1]
-            
+
         if "setup-vars" in job_s.keys():
             dflt, ovr = self.process_vars(
                 job_s["setup-vars"],
                 self.setup_vars_dflt_s[-1],
                 self.setup_vars_ovr_s[-1])
+            if self.tool is not None:
+                ovr["__tool"] = self.tool
+            else:
+                ovr["__tool"] = ""
+                
             js.setupvars = dflt
         else:
             js.setupvars = self.setup_vars_dflt_s[-1].copy()
-            
+
         if "run-vars" in job_s.keys():
             dflt, ovr = self.process_vars(
                 job_s["run-vars"],
@@ -287,7 +301,10 @@ class JobspecLoader(object):
             self.parameters_s.append(parameters)
             
         for j in job_group_s["jobs"]:
-            if "name" in j.keys():
+            print("j: %s" % str(j))
+            if "job-group" in j.keys():
+                self.process_job_group(j)
+            elif "name" in j.keys():
                 self.process_job(j)
             elif "path" in j.keys():
                 # TODO: need to pass along context path
@@ -323,7 +340,18 @@ class JobspecLoader(object):
             print("<-- process_job_group")
     
     def process_jobspec_path(self, path):
+        if self.debug > 0:
+            print("--> process_jobspec_path: %s" % path)
+            
+        basedir = self.dir_s[-1]
+        
+        if not os.path.isabs(path):
+            path = os.path.join(basedir, path)
+            
         dir = os.path.dirname(path)
+
+        print("dir=%s" % dir)        
+        self.dir_s.append(dir)
         data = None
         fp = self.stream_provider.open(path, "r")
         
@@ -337,10 +365,14 @@ class JobspecLoader(object):
             with open(os.path.join(schema_dir, "mkdv_schema.json"), "r") as fp:
                 self.schema = json.load(fp)
 
-        print("--> validate: data=%s schema=%s" % (
-            str(data), str(self.schema)))
+        if self.debug > 0:
+            print("--> validate: data=%s schema=%s" % (
+                str(data), str(self.schema)))
+            
         jsonschema.validate(data, self.schema)
-        print("<-- validate")
+        
+        if self.debug > 0:
+            print("<-- validate")
             
         if data is None:
             # Empty file
@@ -356,6 +388,11 @@ class JobspecLoader(object):
                 pass
             else:
                 raise Exception("Unknown top-level section %s" % key)        
+            
+        self.dir_s.pop()
+            
+        if self.debug > 0:
+            print("<-- process_jobspec_path: %s" % path)
         pass
               
     def process_root(self, root):

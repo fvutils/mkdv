@@ -5,6 +5,7 @@ Created on Aug 30, 2021
 '''
 import asyncio
 from mkdv.backends.backend import Backend
+from mkdv.job_spec import JobSpec
 
 
 class BackendSlurm(Backend):
@@ -16,9 +17,10 @@ class BackendSlurm(Backend):
         """Returns the max parallel jobs to launch"""
         return 40
     
-    async def launch(self, cmdline, cwd=None):
+    async def launch(self, js : JobSpec, cmdline, cwd=None):
         """Launches a new job and returns a proxy process"""
         slurm_cmdline = ['srun', '-E']
+        slurm_cmdline.extend(['-J', js.fullname])
         slurm_cmdline.extend(cmdline)
         
         proc = await asyncio.subprocess.create_subprocess_exec( 
