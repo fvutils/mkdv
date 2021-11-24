@@ -54,11 +54,19 @@ class AllureReporter(object):
         
         self.test_case.labels.append(Label(name=LabelType.FRAMEWORK, value=self.job.tool))
         self.test_case.labels.append(Label(name=LabelType.HOST, value=socket.gethostname()))
+        self.test_case.parameters.append(Parameter(name="TOOL", value=self.job.tool))
         
         for l in self.job.labels:
             self.test_case.labels.append(Label(name=l[0], value=l[1]))
         for p in self.job.parameters:
             self.test_case.parameters.append(Parameter(name=p[0], value=p[1]))
+
+        # Record the run variables as test parameters            
+        for k,v in self.job.runvars.items():
+            self.test_case.parameters.append(Parameter(name=k, value=v))
+        
+        # Record the seed as a test parameter
+        self.test_case.parameters.append(Parameter(name="SEED", value=str(self.job.seed)))
             
         if job_log is not None:
             self.reporter.attach_file(
