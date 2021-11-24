@@ -4,6 +4,7 @@ Created on Nov 16, 2021
 @author: mballance
 '''
 from mkdv.runners.runner_make import RunnerMake
+from mkdv.runners.runner_gtest import RunnerGtest
 
 class RunnerRgy(object):
     
@@ -24,6 +25,7 @@ class RunnerRgy(object):
         if cls._inst is None:
             cls._inst = RunnerRgy()
             cls._inst.runner_m["makefile"] = RunnerMake()
+            cls._inst.runner_m["gtest"] = RunnerGtest()
             
         return cls._inst
     

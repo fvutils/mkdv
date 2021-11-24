@@ -9,6 +9,7 @@ class RunnerSpec(object):
     def __init__(self, runner_id):
         self.runner_id = runner_id
         self.tool_id   = None
+        self.auto_discover = False
         self.config = {}
         
     def __hash__(self):

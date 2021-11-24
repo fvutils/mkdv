@@ -20,6 +20,8 @@ from mkdv.job_vars import JobVars
 from mkdv.generator_spec import GeneratorSpec
 from mkdv.job_limit_spec import JobLimitSpec
 from fusesoc.vlnv import Vlnv
+from mkdv.runners.runner_rgy import RunnerRgy
+from mkdv.runners.runner import Runner
 
 class JobspecLoader(object):
     
@@ -235,18 +237,25 @@ class JobspecLoader(object):
             js.runner_spec = deepcopy(self.runner_s[-1])
             pass
         
+        
         if "limit" in job_s.keys():
             js.limit = self.process_limit(job_s["limit"])
         elif len(self.limit_s) > 0:
             js.limit = self.limit_s[-1].copy()
-        
-        self.jobspec_s.jobspecs.append(js)
+            
         
         self.process_job_run_generators(job_s, js)
 #        self.process_job_setup_generators(job_s, js)
         
 #        self.process_job_setup_vars(job_s, js)
 #        self.process_job_run_vars(job_s, js)
+
+        if js.runner_spec is not None and js.runner_spec.auto_discover:
+            runner : Runner = RunnerRgy.inst().get_runner(js.runner_spec.runner_id)
+            job_specs = runner.query_jobs(js)
+            self.jobspec_s.jobspecs.extend(job_specs)
+        else:
+            self.jobspec_s.jobspecs.append(js)
 
 #        self.process_job
 
@@ -272,8 +281,12 @@ class JobspecLoader(object):
         rg = self.run_generators[-1].copy()
         
     def process_runner(self, runner_s):
-        raise Exception("Unhandled runner spec")
-        pass
+        config = RunnerSpec(runner_s["id"])
+        if "auto-discover" in runner_s.keys():
+            config.auto_discover = runner_s["auto-discover"]
+        if "config" in runner_s.keys():
+            config.config = runner_s["config"].copy()
+        return config
     
     def process_limit(self, limit_s):
         if len(self.limit_s) > 0:
@@ -346,13 +359,13 @@ class JobspecLoader(object):
             print("j: %s" % str(j))
             if "job-group" in j.keys():
                 self.process_job_group(j)
-            elif "name" in j.keys():
-                self.process_job(j)
             elif "vlnv" in j.keys():
                 self.process_vlnv_jobspec_path(j)
             elif "path" in j.keys():
                 # TODO: need to pass along context path
                 self.process_jobspec_path(j["path"])
+            else: # "name" in j.keys():
+                self.process_job(j)
             
         if "name" in job_group_s.keys():
             self.prefix_s.pop()

@@ -9,7 +9,7 @@ from mkdv.runners.runner_spec import RunnerSpec
 
 class Runner(object):
 
-    def query_jobs(self, config) -> List[JobSpec]:
+    def query_jobs(self, job : JobSpec) -> List[JobSpec]:
         """Returns job specifications"""
         return None
     
