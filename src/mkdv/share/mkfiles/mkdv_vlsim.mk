@@ -63,6 +63,9 @@ VLSIM_DEBUG_OPTIONS += --trace-fst
 MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.debug
 #MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.ndebug
 
+LD_LIBRARY_PATH:=$(subst $(eval) ,:,$(sort $(dir $(DPI_LIBS)))):$(LD_LIBRARY_PATH)
+export LD_LIBRARY_PATH
+
 else # Rules
 
 build-vlsim : $(MKDV_BUILD_DEPS)
