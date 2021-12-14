@@ -24,7 +24,8 @@ def cmd_regress(args):
     cm = CoreManagerW()
     
     packages_dir = get_packages_dir()
-    cm.add_library(Library("packages", packages_dir))
+    project_dir = os.path.dirname(packages_dir)
+    cm.add_library(Library("project", project_dir))
     
     cwd_is_lib = False
     if args.library_path is not None:

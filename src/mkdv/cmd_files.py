@@ -7,6 +7,7 @@ from fusesoc.config import Config
 from fusesoc.coremanager import CoreManager
 from fusesoc.librarymanager import Library
 from fusesoc.vlnv import Vlnv
+from mkdv import get_packages_dir
 import os
 import logging
 
@@ -31,17 +32,22 @@ def cmd_files(args):
 #    logging.basicConfig(level=logging.DEBUG)
     
     cm = CoreManager(cfg)
+    
+    packages_dir = get_packages_dir()
+    project_dir = os.path.dirname(packages_dir)
+    cm.add_library(Library("project", project_dir))
 
-    for lib in args.library_path:
-        colon_i = lib.find(':')
-        if colon_i > 1:
-            path = lib[colon_i+1:]
-            lib_name = lib[:colon_i]
-        else:
-            path = lib
-            lib_name = "cmdline"
+    if args.library_path is not None:
+        for lib in args.library_path:
+            colon_i = lib.find(':')
+            if colon_i > 1:
+                path = lib[colon_i+1:]
+                lib_name = lib[:colon_i]
+            else:
+                path = lib
+                lib_name = "cmdline"
             
-        cm.add_library(Library(lib_name, path))
+            cm.add_library(Library(lib_name, path))
         
     top_flags = { "is_toplevel": True }
     if hasattr(args, "target") and args.target is not None:
