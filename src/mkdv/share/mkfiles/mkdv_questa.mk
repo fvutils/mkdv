@@ -93,9 +93,18 @@ endif
 
 run-questa : $(MKDV_RUN_DEPS)
 	vmap work $(MKDV_CACHEDIR)/work
+ifneq (1,$(MKDV_GDB))
 	vsim -batch -do "run $(MKDV_TIMEOUT); quit -f" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
 		$(MKDV_RUN_ARGS)
+else # MKDV_GDB
+	which_vsim=`which vsim`; \
+	vsim_bindir=`dirname $$which_vsim`; \
+	gdb --args $$vsim_bindir/../linux_x86_64/vsimk \
+		-batch -do "run $(MKDV_TIMEOUT); quit -f" \
+		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
+		$(MKDV_RUN_ARGS)
+endif
 
 endif
 endif
