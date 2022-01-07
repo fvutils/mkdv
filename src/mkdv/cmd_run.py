@@ -10,8 +10,12 @@ import sys
 from colorama import Fore
 from colorama import Style
 
-from mkdv.job_spec_set import JobSpecSet
-from mkdv.jobspec_loader import JobspecLoader
+from mkdv import backends
+from .job_spec_set import JobSpecSet
+from .jobspec_loader import JobspecLoader
+from .job_selector import JobSelector
+from .job_queue_builder import JobQueueBuilder
+import shutil
 
 
 def cmd_run(args):
@@ -37,12 +41,10 @@ def cmd_run(args):
             raise Exception("Default specfile " + specfile + " doesn't exist")        
       
     loader = JobspecLoader()
-    specs : JobSpecSet = loader.load(
-        os.path.dirname(specfile),
-         specfile)
+    specs : JobSpecSet = loader.load(specfile)
     
     spec_m = {}
-    for s in specs.jobspecs:
+    for i,s in enumerate(specs.jobspecs):
         spec_m[s.fullname] = s
               
     if args.jobid in spec_m.keys():
@@ -50,76 +52,68 @@ def cmd_run(args):
     else:
         raise Exception("Job-id " + args.jobid + " doesn't exist")
             
-    print("spec=" + str(spec))
+    rundir = os.path.join(os.getcwd(), "rundir")
+    if os.path.isdir(rundir):
+        shutil.rmtree(rundir)
+    os.makedirs(rundir, exist_ok=True)
     
-    cmdline = []
+    cachedir = os.path.join(os.getcwd(), "cache")
+    os.makedirs(cachedir, exist_ok=True)
     
-    cmdline.append("make")
-    cmdline.append("-f")
-    cmdline.append(os.path.join(cwd, "mkdv.mk"))
+    queue_s = JobQueueBuilder().build([spec])
+    queue_s.queues[0].set_cachedir(cachedir)
+    
+    
+    # TODO: remove rundir?
+    
+    backend = backends.backend(args.backend)
 
-    # Add variables    
-    if spec is not None:
-        spec.append_run_variables(cmdline)
+    loop = asyncio.get_event_loop()
+    for i,jspec in enumerate(queue_s.queues[0].jobs):
+        
+        if i == 0:
+            print(f"{Fore.YELLOW}[Start Setup]{Style.RESET_ALL}")
+        else:
+            print(f"{Fore.YELLOW}[Start Run]{Style.RESET_ALL}")
+        sys.stdout.flush()
+        
+        if i == 0:
+            cmd_rundir = cachedir
+        else:
+            cmd_rundir = rundir
+            
+        if i > 0:
+            jspec.debug = args.debug
+            
+        cmdline = []
+        cmdline.extend([sys.executable, "-m", "mkdv.wrapper"])
+        cmdline.append(os.path.join(cmd_rundir, "job.yaml"))
+       
+        with open(os.path.join(cmd_rundir, "job.yaml"), "w") as fp:
+            jspec.dump(fp)
     
-    if hasattr(args, "tool") and args.tool is not None:
-        cmdline.append("MKDV_TOOL=" + args.tool)
+        proc = loop.run_until_complete(
+            backend.launch(
+                jspec,
+                cmdline,
+                cwd=cmd_rundir))
         
-    if hasattr(args, "debug") and args.debug:
-        cmdline.append("MKDV_DEBUG=1")
-        cmdline.append("DEBUG=1")
-        
-    for var,val in spec.variables.items():
-        cmdline.append("%s=\"%s\"" % (var, val))
-        
-    
-    # TODO: Add variables if spec
+        done,pending = loop.run_until_complete(
+            asyncio.wait([loop.create_task(proc.wait())]))
 
-    cmdline.append("_setup")
-
-    print(f"{Fore.YELLOW}[Start Setup]{Style.RESET_ALL}")
-    sys.stdout.flush()
-    loop = asyncio.get_event_loop()    
-    proc = loop.run_until_complete(
-        asyncio.subprocess.create_subprocess_exec(*cmdline))
+        if proc.returncode == 0:
+            if i == 0:
+                print(f"{Fore.GREEN}[Setup PASS]{Style.RESET_ALL}")
+            else:
+                print(f"{Fore.GREEN}[Run PASS]{Style.RESET_ALL}")
+        else:
+            if i == 0:
+                print(f"{Fore.RED}[Setup FAIL]{Style.RESET_ALL} -- exit code " + str(proc.returncode))
+            else:
+                if proc.returncode == 124:
+                    print(f"{Fore.RED}[Run Timeout]{Style.RESET_ALL} -- exit code " + str(proc.returncode))
+                else:
+                    print(f"{Fore.RED}[Run FAIL]{Style.RESET_ALL} -- exit code " + str(proc.returncode))
+            return proc.returncode
     
-    done,pending = loop.run_until_complete(
-        asyncio.wait([loop.create_task(proc.wait())]))
-
-    if proc.returncode == 0:
-        print(f"{Fore.GREEN}[Setup PASS]{Style.RESET_ALL}")
-    else:
-        print(f"{Fore.RED}[Setup FAIL]{Style.RESET_ALL} -- exit code " + str(proc.returncode))
-        return proc.returncode
-        
-    cmdline.pop()
-    
-    if hasattr(args, "limit_time") and args.limit_time is not None:
-        cmdline.insert(0, "%s" % args.limit_time)
-        cmdline.insert(0, "timeout")
-    cmdline.append("_run")
-    
-    print(f"{Fore.YELLOW}[Start Run]{Style.RESET_ALL}")
-    sys.stdout.flush()
-    loop = asyncio.get_event_loop()    
-    proc = loop.run_until_complete(
-        asyncio.subprocess.create_subprocess_exec(*cmdline))
-    
-    done,pending = loop.run_until_complete(
-        asyncio.wait([loop.create_task(proc.wait())]))
-    print("<-- run")
-
-    if proc.returncode == 0:
-        print(f"{Fore.GREEN}[Run PASS]{Style.RESET_ALL}")
-    elif proc.returncode == 124:
-        print(f"{Fore.RED}[Run FAIL]{Style.RESET_ALL} timeout after %s" % str(args.limit_time))
-    else:
-        print(f"{Fore.RED}[Run FAIL]{Style.RESET_ALL} -- exit code " + str(proc.returncode))
-        
-    return proc.returncode
-        
-#    loop = asyncio.get_event_loop()    
-    
-#    loader = TestLoader()
-#    specs = loader.load(os.getcwd())
-#    pass
+    return 0

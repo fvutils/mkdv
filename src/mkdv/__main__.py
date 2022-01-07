@@ -106,6 +106,9 @@ def get_parser():
         help="Run in debug mode")
     run_cmd.add_argument("-lt", "--limit-time", dest="limit_time",
         help="Specify job's time limit")
+    run_cmd.add_argument("-b", "--backend", dest="backend",
+        default="local", choices=backends.backends(),
+        help="Specifies the backend used for launching jobs")
     run_cmd.add_argument("-s", "--job-spec", dest="jobspec",
         help="Specifies the job-spec file (mkdv.yaml by default)")
     run_cmd.add_argument("jobid", help="Specifies job-id to run.")

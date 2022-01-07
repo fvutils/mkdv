@@ -31,8 +31,11 @@ class RunnerMake(Runner):
     
     def run_job(self, spec):
         cmdline = []
-        
-        reporter = AllureReporter(spec)
+
+        if spec.reportdir is not None:
+            reporter = AllureReporter(spec)
+        else:
+            reporter = None
         
         mkfile = os.path.join(spec.basedir, "mkdv.mk")
        
@@ -51,6 +54,9 @@ class RunnerMake(Runner):
         
         if spec.tool is not None:
             cmdline.append("MKDV_TOOL=%s" % spec.tool)
+        
+        if spec.debug:
+            cmdline.append("MKDV_DEBUG=1")
 
         if spec.is_setup:
             cmdline.append("_setup")
@@ -63,7 +69,8 @@ class RunnerMake(Runner):
         
         job_log = open("job.log", "w")
 
-        reporter.start()        
+        if reporter is not None:
+            reporter.start()        
         proc = subprocess.Popen(
             cmdline,
             stdout=subprocess.PIPE,
@@ -108,9 +115,10 @@ class RunnerMake(Runner):
                 fp.write("MKDV Error: Timeout after %s\n" % (str(spec.limit.time)))
         else:
             status = Status.FAILED        
-        
-        reporter.done(status, 
-                      os.path.join(os.getcwd(), "job.log"))
+
+        if reporter is not None:        
+            reporter.done(status, 
+                    os.path.join(os.getcwd(), "job.log"))
         
     
     def generate(self):

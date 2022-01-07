@@ -58,7 +58,7 @@ class JobspecLoader(object):
         self.jobspec_s = None
         self.dflt_mkdv_mk = None
         self.ps = ":"
-        self.debug = 1
+        self.debug = 0
 
         if stream_provider is None:
             stream_provider = StreamProvider()
@@ -127,6 +127,9 @@ class JobspecLoader(object):
         
         data = yaml.load(fp, Loader=FullLoader)
         
+        if self.debug > 0:
+            print("File: %s ; Data: %s" % (path, str(data)))
+        
         self.stream_provider.close(fp)
         
         if self.schema is None:
@@ -135,10 +138,17 @@ class JobspecLoader(object):
             with open(os.path.join(schema_dir, "mkdv_schema.json"), "r") as fp:
                 self.schema = json.load(fp)
 
-        print("--> validate: data=%s schema=%s" % (
-            str(data), str(self.schema)))
-        jsonschema.validate(data, self.schema)
-        print("<-- validate")
+        if self.debug > 0:
+            print("--> validate: data=%s schema=%s" % (
+                str(data), str(self.schema)))
+        try:
+            jsonschema.validate(data, self.schema)
+        except Exception as e:
+            print("Error: validation of %s failed" % path)
+            raise e
+        
+        if self.debug > 0:
+            print("<-- validate")
             
         if data is None:
             # Empty file
@@ -190,7 +200,9 @@ class JobspecLoader(object):
             js.count = job_s["count"]
         else:
             js.count = self.count_s[-1]
-        print("Set job count: %d" % js.count)
+        
+        if self.debug > 0:
+            print("Set job count: %d" % js.count)
 
         if "setup-vars" in job_s.keys():
             dflt, ovr = self.process_vars(
@@ -207,12 +219,16 @@ class JobspecLoader(object):
             js.setupvars = self.setup_vars_dflt_s[-1].copy()
 
         if "run-vars" in job_s.keys():
+            if self.debug > 0:
+                print("run-vars: name=%s incoming=%s" % (js.name, str(self.run_vars_dflt_s[-1])))
             dflt, ovr = self.process_vars(
                 job_s["run-vars"],
                 self.run_vars_dflt_s[-1],
                 self.run_vars_ovr_s[-1])
             js.runvars = dflt
         else:
+            if self.debug > 0:
+                print("run-vars: applying default name=%s incoming=%s" % (js.name, str(self.run_vars_dflt_s[-1])))
             js.runvars = self.run_vars_dflt_s[-1].copy()
             
         js.attachments = self.attachments_s[-1].copy()
@@ -354,11 +370,16 @@ class JobspecLoader(object):
             for key,value in job_group_s["parameters"].items():
                 parameters[key] = value
             self.parameters_s.append(parameters)
+
+        if self.debug > 0:            
+            print("job_group_s: %s" % str(job_group_s))
+            print("  keys: %s" % str(job_group_s.keys()))
             
         for j in job_group_s["jobs"]:
-            print("j: %s" % str(j))
+            if self.debug > 0:
+                print("j: %s" % str(j))
             if "job-group" in j.keys():
-                self.process_job_group(j)
+                self.process_job_group(j["job-group"])
             elif "vlnv" in j.keys():
                 self.process_vlnv_jobspec_path(j)
             elif "path" in j.keys():
@@ -436,7 +457,9 @@ class JobspecLoader(object):
             
         dir = os.path.dirname(path)
 
-        print("dir=%s" % dir)        
+        if self.debug > 0:
+            print("dir=%s" % dir)        
+        
         self.dir_s.append(dir)
         data = None
         fp = self.stream_provider.open(path, "r")
@@ -454,8 +477,13 @@ class JobspecLoader(object):
         if self.debug > 0:
             print("--> validate: data=%s schema=%s" % (
                 str(data), str(self.schema)))
+
+        try:            
+            jsonschema.validate(data, self.schema)
+        except Exception as e:
+            print("Error: validation failed for %s" % path)
+            raise e
             
-        jsonschema.validate(data, self.schema)
         
         if self.debug > 0:
             print("<-- validate")

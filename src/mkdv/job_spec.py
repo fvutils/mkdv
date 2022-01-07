@@ -29,6 +29,8 @@ class JobSpec(object):
         # A >1 count comes from the testlist        
         self.count = 1
         
+        self.debug = False
+        
         self.is_setup = False
         self.rerun = False
         
@@ -88,6 +90,7 @@ class JobSpec(object):
         job_s["id"]        = self.id
         job_s["seed"]      = self.seed        
         job_s["name"]      = self.name
+        job_s["debug"]     = self.debug
         job_s["fullname"]  = self.fullname
         job_s["is-setup"] = self.is_setup
         job_s["rerun"] = self.rerun
@@ -132,6 +135,7 @@ class JobSpec(object):
         job.id = job_s["id"]
         job.seed = job_s["seed"]
         
+        job.debug = job_s["debug"]
         job.is_setup = job_s["is-setup"]
         job.rerun = job_s["rerun"]
         job.description = job_s["description"]

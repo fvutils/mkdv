@@ -25,9 +25,7 @@ def cmd_list(args):
             raise Exception("Default specfile " + specfile + " doesn't exist")
 
     loader = JobspecLoader()
-    specs : JobSpecSet = loader.load(
-        os.path.dirname(specfile),
-        specfile)
+    specs : JobSpecSet = loader.load(specfile)
 
     jobid_l = [spec.fullname for spec in specs.jobspecs]
     jobid_l.sort()
