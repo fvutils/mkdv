@@ -52,6 +52,10 @@ def cmd_files(args):
     top_flags = { "is_toplevel": True }
     if hasattr(args, "target") and args.target is not None:
         top_flags["target"] = args.target
+    
+#    for f in args.flags:
+#        print("Flag: %s" % f)
+#        top_flags[f] = True
         
     core_deps = cm.get_depends(Vlnv(args.vlnv), flags=top_flags)
     
@@ -63,11 +67,21 @@ def cmd_files(args):
 
     files = []
     
+    flags = {}
+    for f in args.flags:
+        subflags = f.split(',')
+        for sf in subflags:
+            flags[sf] = True
+    
     for d in core_deps:
         file_flags = {"is_toplevel": True}
         
         if hasattr(args, "target") and args.target is not None:
             file_flags["target"] = args.target
+            
+        # Bring in flags to specify which content is included
+        file_flags.update(flags)
+        
         d_files = d.get_files(file_flags)
 
         for f in d_files:

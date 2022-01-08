@@ -57,6 +57,9 @@ def get_parser():
     files_cmd.add_argument("-e", "--target",
         dest="target",
         help="Specifies the entry target (default if not specified)")
+    files_cmd.add_argument("-f", "--flag",
+        dest="flags", action="append",
+        help="Specifies a flag to be applied")
     files_cmd.add_argument("-t", "--file-type",
         dest="file_type", action="append",
         help="Specifies the file-type identifier to query")
