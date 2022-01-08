@@ -171,7 +171,17 @@
 					"items": {
 						"oneOf": [
 							{
+								"type": "object",
 								"$ref": "#/defs/jobType"
+							},
+							{
+								"type": "object",
+								"properties": {
+									"job-group": {
+										"$ref": "#/defs/jobGroupType"
+									}
+								},
+								"required": ["job-group"]
 							},
 							{
 								"type": "object",

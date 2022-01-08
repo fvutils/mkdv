@@ -42,6 +42,7 @@ class JobSetupW(object):
 class JobQueueBuilder(object):
     
     def __init__(self):
+        self.debug = 0
         pass
     
     def build(self, specs : List[JobSpec]) -> JobQueueSet:
@@ -64,7 +65,6 @@ class JobQueueBuilder(object):
                 q.append(setup_j)
                 q.append(j)
                 queue_s.queues.append(q)
-                print("setupvars.type=%s" % str(type(j.setupvars)))
                 rq = {JobSetupW(j) : q}
                 runner_m[j.runner_spec] = rq
                 total_job_l.append(j)
@@ -93,8 +93,10 @@ class JobQueueBuilder(object):
                     total_job_l.append(j)
 
         res = toposort(dep_m)
-        print("res-type: %s" % str(type(res)))
-        print("Result: %s" % str(list(res)))
+        
+        if self.debug > 0:
+            print("res-type: %s" % str(type(res)))
+            print("Result: %s" % str(list(res)))
         
         return queue_s
         
