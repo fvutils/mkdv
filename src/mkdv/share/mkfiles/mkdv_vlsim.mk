@@ -51,6 +51,7 @@ VLSIM_OPTIONS += --vpi
 VLSIM_OPTIONS += --top-module $(TOP_MODULE)
 
 VLSIM_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
+VLSIM_OPTIONS += $(foreach dir,$(sort $(dir $(MKDV_VL_SRCS))),+incdir+$(dir))
 VLSIM_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
 VLSIM_OPTIONS += $(foreach spec,$(VLSIM_CLKSPEC), -clkspec $(spec))
 SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
@@ -62,6 +63,10 @@ VLSIM_DEBUG_OPTIONS += --trace-fst
 # Always build both images
 MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.debug
 #MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.ndebug
+
+ifneq (,$(DPI_LIBS))
+export LD_LIBRARY_PATH:=$(subst $(eval) ,:,$(sort $(dir $(DPI_LIBS)))):$(LD_LIBRARY_PATH)
+endif
 
 else # Rules
 
@@ -84,6 +89,7 @@ endif
 		$(foreach l,$(DPI_LIBS),$(l))
 
 run-vlsim : $(MKDV_RUN_DEPS)
+	echo "LD_LIBRARY_PATH=$(LD_LIBRARY_PATH)"
 	$(VLSIM_PREFIX) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
 	
 
