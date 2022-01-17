@@ -72,10 +72,11 @@ $(MKDV_RUNDIR)/$(TOP_MODULE)/config.tcl : $(dir $(MKDV_MK))/config.tcl
 	mkdir -p `dirname $@`
 	cp $^ $@
 
-run-openlane : $(MKDV_RUNDIR)/$(TOP_MODULE)/config.tcl
+run-openlane : $(MKDV_RUNDIR)/$(TOP_MODULE)/config.tcl $(MKDV_RUN_DEPS)
 ifeq (,$(TOP_MODULE))
 	@echo "Error: TOP_MODULE not set"; exit 1
 endif
+	cd $(OPENLANE_ROOT) && \
 	docker run -it -v $(OPENLANE_ROOT):/openLANE_flow \
 		-v $(PDK_ROOT):$(PDK_ROOT) \
 		-v $(MKDV_RUNDIR):/mkdv_rundir \
