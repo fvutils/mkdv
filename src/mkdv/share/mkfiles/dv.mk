@@ -27,12 +27,6 @@ MKDV_TIMEOUT ?= 1ms
 MKDV_MKFILES_PATH += $(DV_MK_MKFILES_DIR)
 MKDV_INCLUDE_DIR = $(abspath $(DV_MK_MKFILES_DIR)/../include)
 
-
-# PYBFMS_MODULES += wishbone_bfms
-# VLSIM_CLKSPEC += -clkspec clk=10ns
-
-#TOP_MODULE ?= unset
-
 PATH := $(PACKAGES_DIR)/python/bin:$(PATH)
 export PATH
 
@@ -41,8 +35,16 @@ MKDV_VL_INCDIRS += $(DV_MK_MKFILES_DIR)/../include
 INCFILES = $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 
-PYTHONPATH := $(subst $(eval) ,:,$(MKDV_PYTHONPATH))
+PYTHONPATH := $(subst $(eval) ,:,$(MKDV_PYTHONPATH)):$(PYTHONPATH)
 export PYTHONPATH
+
+#********************************************************************
+#* Job parameters are recorded in the job-results database
+#********************************************************************
+MKDV_JOB_PARAMETERS += MKDV_TOOL=$(MKDV_TOOL)
+export MKDV_JOB_PARAMETERS
+
+export MKDV_JOB_TAGS
 
 
 #info :
@@ -52,10 +54,10 @@ export PYTHONPATH
 else # Rules
 
 # All is the default target run from the command line
-all : build run
+default : help
 
-.PHONY: build
-build :
+.PHONY: _setup
+_setup :
 ifeq (,$(MKDV_MK))
 	@echo "Error: MKDV_MK is not set"; exit 1
 endif
@@ -71,9 +73,11 @@ endif
 		MKDV_CACHEDIR=$(MKDV_CACHEDIR) \
 		build-$(MKDV_TOOL) || (echo "FAIL: exit status $$?" > status.txt; exit 1)
 
-.PHONY: pre-run run post-run
-run : 
-	@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
+.PHONY: _run pre-run run post-run
+_run : 
+	#@echo "INCFILES: $(INCFILES) $(MKDV_AVAILABLE_TOOLS) $(MKDV_AVAILABLE_PLUGINS)"
+	# Save environment variables for inspection
+	@env > job.env
 ifeq (,$(MKDV_MK))
 	$(Q)echo "Error: MKDV_MK is not set"; exit 1
 endif
@@ -115,17 +119,36 @@ ifneq (,$(MKDV_TESTS))
 else
 endif	
 
+.PHONY: help
+help :
+	@echo "mkdv.mk"
+	@echo "    Targets:"
+	@echo "        list    - list available jobs"
+	@echo "        regress - run a set of jobs"
+	@echo "        run     - run a single job"
+	@echo "        mkrun   - run the Makefile flow without jobspec infrastructure"
+	@echo "    Note: pass arguments via MKDV_ARGS variable"
+
+.PHONY: list
+list :
+	python3 -m mkdv list $(MKDV_ARGS)
+	
+.PHONY: mkrun
+mkrun : _setup _run
+
+.PHONY: regress
+regress : 
+	python3 -m mkdv regress $(MKDV_ARGS)
+	
+.PHONY: run
+run :
+	python3 -m mkdv run $(MKDV_ARGS)
+
 clean-all : $(foreach tool,$(DV_TOOLS),clean-$(tool))
 
 clean : 
 	rm -rf rundir cache
 
-help : help-$(TOOL)
-
-help-all : 
-	@echo "dv-mk help."
-	@echo "Available tools: $(DV_TOOLS)"
-	
 
 include $(foreach dir,$(MKDV_MKFILES_PATH),$(wildcard $(dir)/mkdv_*.mk))
 

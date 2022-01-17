@@ -26,6 +26,9 @@ $(TOP_MODULE).qsf :
 ifneq (,$(SDC_FILE))
 	echo "set_global_assignment -name SDC_FILE $(SDC_FILE)" >> $@
 endif
+ifneq (,$(BRD_FILE))
+	cat $(BRD_FILE) >> $@
+endif
 
 $(TOP_MODULE).qpf : 
 	echo 'PROJECT_REVISION = "$(TOP_MODULE)"' > $@

@@ -47,8 +47,16 @@ SIMV_ARGS += +timeout=$(ICARUS_TIMEOUT)
 SIMV_ARGS += $(MKDV_RUN_ARGS)
 
 SIMV=simv.vvp
-ifneq (,$(DEBUG))
+ifeq (1,$(MKDV_DEBUG))
 SIMV_ARGS += +dumpvars
+endif
+
+ifeq (1,$(MKDV_VALGRIND))
+  VVP_PREFIX=valgrind --tool=memcheck 
+endif
+
+ifeq (1,$(MKDV_GDB))
+  VVP_PREFIX=gdb --args 
 endif
 
 IVERILOG_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),-I $(inc))
@@ -68,7 +76,7 @@ $(MKDV_CACHEDIR)/$(SIMV) : $(MKDV_VL_SRCS)
 	$(Q)iverilog -o $@ -M depfile.mk $(IVERILOG_OPTIONS) $(MKDV_VL_SRCS)
 
 run-icarus : $(MKDV_RUN_DEPS)
-	$(Q)vvp $(VVP_OPTIONS) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
+	$(Q)$(VVP_PREFIX) vvp $(VVP_OPTIONS) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
 
 endif
 

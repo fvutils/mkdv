@@ -7,12 +7,13 @@ import argparse
 import os
 
 from mkdv.runner import Runner
-from mkdv.test_loader import TestLoader
 import asyncio
 from .cmd_list import cmd_list
 from .cmd_regress import cmd_regress
 from .cmd_run import cmd_run
 import sys
+from mkdv.jobspec_loader import JobspecLoader
+from mkdv import backends
 
 
 def mkfile(args):
@@ -20,7 +21,7 @@ def mkfile(args):
     print(os.path.join(mkdv_dir, "share", "mkfiles", "dv.mk"))
     
 def list_tests(args):
-    loader = TestLoader()
+    loader = JobspecLoader()
     specs = loader.load(os.getcwd())
     
     r = Runner(os.getcwd(), specs)
@@ -32,7 +33,7 @@ def list_tests(args):
     
    
 def run(args):
-    loader = TestLoader()
+    loader = JobspecLoader()
     specs = loader.load(os.getcwd())
    
     pass
@@ -49,6 +50,8 @@ def get_parser():
         help="Discovers and lists available tests")
     list_cmd.add_argument("-s", "--job-spec", dest="jobspec",
         help="Specifies the job-spec file (mkdv.yaml by default)")
+    list_cmd.add_argument("-c", "--job-categories", dest="categories",
+        action="store_true", help="Show job categories, not individual jobs")
     list_cmd.set_defaults(func=cmd_list)
     
     mkfile_cmd = subparser.add_parser("mkfile",
@@ -57,7 +60,28 @@ def get_parser():
     
     regress_cmd = subparser.add_parser("regress",
         help="Run a series of tests")
-    regress_cmd.add_argument("-t", "--test-dir")
+    regress_cmd.add_argument("-s", "--test-spec", 
+        dest="test_specs", action="append",
+        help="Specifies a file containing a test-spec to use")
+    regress_cmd.add_argument("-t", "--tool", dest="tool",
+        help="Specify the tool to run (defaults to makefile setting)")
+    regress_cmd.add_argument("-j", "--max-par", dest="max_par",
+        help="Specifies maximum jobs to run in parallel")
+    regress_cmd.add_argument("-b", "--backend", dest="backend",
+        default="local", choices=backends.backends(),
+        help="Specifies the backend used for launching jobs")
+    regress_cmd.add_argument("-e", "--exclude", dest="exclude",
+        action="append", 
+        help="Specifies test patterns to exclude from the runlist")
+    regress_cmd.add_argument("-i", "--include", dest="include",
+        action="append", 
+        help="Specifies test patterns to include in the runlist")
+    regress_cmd.add_argument("-lt", "--limit-time", dest="limit_time",
+        help="Specify job's time limit")
+    regress_cmd.add_argument("-r", "--rerun-failing", dest="rerun_failing",
+        action="store_true",
+        help="Rerun failing jobs with debug enabled")
+    
     regress_cmd.set_defaults(func=cmd_regress)
     
     run_cmd = subparser.add_parser("run",
@@ -67,10 +91,11 @@ def get_parser():
     run_cmd.add_argument("-d", "--debug", dest="debug",
         action="store_true",
         help="Run in debug mode")
+    run_cmd.add_argument("-lt", "--limit-time", dest="limit_time",
+        help="Specify job's time limit")
     run_cmd.add_argument("-s", "--job-spec", dest="jobspec",
         help="Specifies the job-spec file (mkdv.yaml by default)")
-    run_cmd.add_argument("-j", "--job-id", dest="jobid",
-        help="Specifies job-id to run.")
+    run_cmd.add_argument("jobid", help="Specifies job-id to run.")
     run_cmd.set_defaults(func=cmd_run)
     
     return parser

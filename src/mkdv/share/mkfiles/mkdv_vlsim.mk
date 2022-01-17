@@ -22,18 +22,28 @@ endif
 ifeq (vlsim,$(MKDV_TOOL))
 
 ifneq (1,$(RULES))
-VLSIM := $(PACKAGES_DIR)/python/bin/vlsim
+VLSIM := python3 -m vlsim
+
+MKDV_PYTHONPATH += $(PACKAGES_DIR)/vlsim/src
 
 MKDV_VL_DEFINES += HAVE_BIND
 
-ifneq (,$(DEBUG))
-VLSIM_OPTIONS += --trace-fst
+ifeq (1,$(MKDV_DEBUG))
+#VLSIM_OPTIONS += --trace-fst
 SIMV_ARGS += +vlsim.trace
-#SIMV = $(MKDV_CACHEDIR)/simv.debug
 SIMV = simv.debug
 else
-#SIMV = $(MKDV_CACHEDIR)/simv.ndebug
 SIMV = simv.ndebug
+endif
+
+SIMV = simv.debug
+
+ifeq (1,$(MKDV_VALGRIND))
+  VLSIM_PREFIX=valgrind --tool=memcheck 
+endif
+
+ifeq (1,$(MKDV_GDB))
+  VLSIM_PREFIX=gdb --args 
 endif
 
 # Enable VPI for Verilator
@@ -47,13 +57,28 @@ SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
 SIMV_ARGS += +vlsim.timeout=$(MKDV_TIMEOUT)
 SIMV_ARGS += $(MKDV_RUN_ARGS)
 
-MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/$(SIMV)
+VLSIM_DEBUG_OPTIONS += --trace-fst 
+
+# Always build both images
+MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.debug
+#MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.ndebug
+
+LD_LIBRARY_PATH:=$(subst $(eval) ,:,$(sort $(dir $(DPI_LIBS)))):$(LD_LIBRARY_PATH)
+export LD_LIBRARY_PATH
 
 else # Rules
 
 build-vlsim : $(MKDV_BUILD_DEPS)
 
-$(MKDV_CACHEDIR)/$(SIMV) : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
+$(MKDV_CACHEDIR)/simv.debug : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
+ifeq (,$(VLSIM_CLKSPEC))
+	@echo "Error: no VLSIM_CLKSPEC specified (eg clk=10ns)"; exit 1
+endif
+	cd $(MKDV_CACHEDIR) ; $(VLSIM) -o $(notdir $@) \
+		$(VLSIM_OPTIONS) $(VLSIM_DEBUG_OPTIONS) $(MKDV_VL_SRCS) \
+		$(MKDV_DPI_SRCS) $(foreach l,$(DPI_LIBS),$(l))
+
+$(MKDV_CACHEDIR)/simv.ndebug : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
 ifeq (,$(VLSIM_CLKSPEC))
 	@echo "Error: no VLSIM_CLKSPEC specified (eg clk=10ns)"; exit 1
 endif
@@ -62,7 +87,7 @@ endif
 		$(foreach l,$(DPI_LIBS),$(l))
 
 run-vlsim : $(MKDV_RUN_DEPS)
-	$(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS) $(MKDV_RUN_ARGS)
+	$(VLSIM_PREFIX) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
 	
 
 endif
