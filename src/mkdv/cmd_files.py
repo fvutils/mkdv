@@ -72,6 +72,16 @@ def cmd_files(args):
         subflags = f.split(',')
         for sf in subflags:
             flags[sf] = True
+            
+    file_type = None
+    
+    if args.file_type is not None:
+        file_type = set()
+        
+        for t in args.file_type:
+            subtypes = t.split(',')
+            for st in subtypes:
+                file_type.add(st)
     
     for d in core_deps:
         file_flags = {"is_toplevel": True}
@@ -85,7 +95,7 @@ def cmd_files(args):
         d_files = d.get_files(file_flags)
 
         for f in d_files:
-            if args.file_type is None or f['file_type'] in args.file_type:
+            if file_type is None or f['file_type'] in file_type:
                 is_include = 'include_path' in f.keys() and f['include_path']
                 
                 if is_include == args.include:
