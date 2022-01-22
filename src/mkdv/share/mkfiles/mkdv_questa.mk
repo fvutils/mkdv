@@ -88,13 +88,25 @@ endif
 #	vopt -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
 	touch $@
 	
+ifeq (1,$(MKDV_GDB))
+  WHICH_VSIM:=$(shell which vsim)
+  QUESTA_BINDIR:=$(dir $(WHICH_VSIM))
+
+  ifeq ("bin", $(notdir $(QUESTA_BINDIR)))
+    QUESTA_ROOT := $(abspath $(QUESTA_BINDIR)/../..)
+  else
+    QUESTA_ROOT := $(abspath $(QUESTA_BINDIR)/..)
+  endif
+
+  VSIMK:=$(QUESTA_ROOT)/linux_x86_64/vsimk
+endif
 
 
 
 run-questa : $(MKDV_RUN_DEPS)
 	vmap work $(MKDV_CACHEDIR)/work
 ifeq (1,$(MKDV_GDB))
-	gdb --args vsimk -batch -do "run $(MKDV_TIMEOUT); quit -f" \
+	gdb --args $(VSIMK) -batch -do "run $(MKDV_TIMEOUT); quit -f" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
 		$(MKDV_RUN_ARGS)
 else
