@@ -68,10 +68,11 @@ def cmd_files(args):
     files = []
     
     flags = {}
-    for f in args.flags:
-        subflags = f.split(',')
-        for sf in subflags:
-            flags[sf] = True
+    if args.flags is not None:
+        for f in args.flags:
+            subflags = f.split(',')
+            for sf in subflags:
+                flags[sf] = True
             
     file_type = None
     
