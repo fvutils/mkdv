@@ -67,16 +67,6 @@ def cmd_files(args):
         with open(filespec, "r") as fp:
             filespec = yaml.load(fp, Loader=yaml.loader.FullLoader)
 
-<<<<<<< HEAD
-    files = []
-    
-    flags = {}
-    if args.flags is not None:
-        for f in args.flags:
-            subflags = f.split(',')
-            for sf in subflags:
-                flags[sf] = True
-=======
         if "filespec" not in filespec.keys():
             raise Exception("YAML filespec does not contain 'filespec'")
         
@@ -93,7 +83,6 @@ def cmd_files(args):
         
                 flags = {}
                 file_type = set()
->>>>>>> origin/schema-redo
             
                 t = e["type"]
                 if isinstance(t, list):
