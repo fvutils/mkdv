@@ -103,6 +103,11 @@ endif
 		post-run || (echo "FAIL: post-run failed with exit status $$?" > $(MKDV_RUNDIR)/status.txt; exit 1)
 ifeq (,$(MKDV_CHECK_TARGET))
 	$(Q)echo "PASS: " > $(MKDV_RUNDIR)/status.txt
+endif
+
+_check :
+ifeq (,$(MKDV_CHECK_TARGET))
+	$(Q)echo "PASS: " > $(MKDV_RUNDIR)/status.txt
 else
 	$(Q)$(MAKE) -C $(MKDV_RUNDIR) -f $(MKDV_MK) \
 		MKDV_RUNDIR=$(MKDV_RUNDIR) \
@@ -134,7 +139,7 @@ list :
 	python3 -m mkdv list $(MKDV_ARGS)
 	
 .PHONY: mkrun
-mkrun : _setup _run
+mkrun : _setup _run _check
 
 .PHONY: regress
 regress : 

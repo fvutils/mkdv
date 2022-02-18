@@ -101,16 +101,21 @@ ifeq (1,$(MKDV_GDB))
   VSIMK:=$(QUESTA_ROOT)/linux_x86_64/vsimk
 endif
 
+ifeq (1,$(COVERAGE_SAVE))
+  BATCH_CMD += coverage save -onexit cov.ucdb;
+endif
+BATCH_CMD += run $(MKDV_TIMEOUT);
+BATCH_CMD += quit -f;
 
 
 run-questa : $(MKDV_RUN_DEPS)
 	vmap work $(MKDV_CACHEDIR)/work
 ifeq (1,$(MKDV_GDB))
-	gdb --args $(VSIMK) -batch -do "run $(MKDV_TIMEOUT); quit -f" \
+	gdb --args $(VSIMK) -batch -do "$(BATCH_CMD)" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
 		$(MKDV_RUN_ARGS)
 else
-	vsim -batch -do "run $(MKDV_TIMEOUT); quit -f" \
+	vsim -batch -do "$(BATCH_CMD)" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
 		$(MKDV_RUN_ARGS)
 endif

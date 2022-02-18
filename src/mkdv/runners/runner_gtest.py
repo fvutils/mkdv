@@ -121,3 +121,9 @@ class RunnerGtest(Runner):
         reporter.done(status, 
                       os.path.join(os.getcwd(), "job.log"))
         
+        if code != 0:
+            return 1
+        else:
+            return 0
+        
+        

@@ -9,6 +9,7 @@ import yaml
 from mkdv.wrapper.job_wrapper import JobWrapper
 from mkdv.job_spec import JobSpec
 from mkdv.job_yaml_reader import JobYamlReader
+import sys
 
 
 def getparser():
@@ -27,7 +28,15 @@ def main():
         job  = JobSpec.load(fp)
     
     job_w = JobWrapper(job)
-    job_w.run()
+    
+    try:
+        code = job_w.run()
+        if code is None:
+            code = 1
+            print("Error: None returned as exit code", flush=True)
+        sys.exit(code)
+    except Exception as e:
+        sys.exit(1)
     
 
 if __name__ == "__main__":

@@ -23,11 +23,11 @@ class RunnerMake(Runner):
         pass
     
     def setup(self, spec : JobSpec):
-        self.run_job(spec)
+        return self.run_job(spec)
     
     def run(self, spec : JobSpec):
         """Runs the specified job. Invoked by the job wrapper"""
-        self.run_job(spec)
+        return self.run_job(spec)
     
     def run_job(self, spec):
         cmdline = []
@@ -59,14 +59,14 @@ class RunnerMake(Runner):
             cmdline.append("MKDV_DEBUG=1")
 
         if spec.is_setup:
-            cmdline.append("_setup")
             for k,v in spec.setupvars.items():
                 cmdline.append("%s=%s" % (k, v))
+            cmdline.append("_setup")
         else:
-            cmdline.append("_run")
             for k,v in spec.runvars.items():
                 cmdline.append("%s=%s" % (k, v))
-        
+            cmdline.append("_run")
+
         job_log = open("job.log", "w")
 
         if reporter is not None:
@@ -82,13 +82,20 @@ class RunnerMake(Runner):
                 break
             line = line.decode()
             job_log.write(line)
-            
-        job_log.close()
         
         code = proc.wait()
 
+        job_log.flush()
+        job_log.close()
+        os.sync()
+
+        cmdline[-1] = "_check"
+        result = subprocess.run(
+                cmdline,
+                stdout=subprocess.DEVNULL)
+
         status = None        
-        if code == 0:
+        if result.returncode == 0:
             # Setup jobs don't automatically produce a status.txt
             if spec.is_setup:
                 with open("status.txt", "w") as fp:
@@ -119,6 +126,11 @@ class RunnerMake(Runner):
         if reporter is not None:        
             reporter.done(status, 
                     os.path.join(os.getcwd(), "job.log"))
+        
+        if code != 0:
+            return 1
+        else:
+            return 0
         
     
     def generate(self):

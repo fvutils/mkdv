@@ -46,9 +46,9 @@ class JobWrapper(object):
         runner.validate(self.job)
         
         if self.job.is_setup:
-            runner.setup(self.job)
+            return runner.setup(self.job)
         else:
-            runner.run(self.job)
+            return runner.run(self.job)
         
 #         cmdline = []
 #         if "limit-time" in job.keys():
