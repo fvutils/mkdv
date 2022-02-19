@@ -1,0 +1,6 @@
+
+{% for key,files in files.items() -%}
+  {% if files|length > 0 -%}
+    {{key}} += {{" ".join(files)}}
+  {% endif %}
+{% endfor %}

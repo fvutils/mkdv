@@ -14,6 +14,7 @@ import sys
 from mkdv.jobspec_loader import JobspecLoader
 from mkdv import backends
 from mkdv.cmd_files import cmd_files
+from mkdv.cmd_filespec import cmd_filespec
 
 
 def mkfile(args):
@@ -66,6 +67,18 @@ def get_parser():
     files_cmd.add_argument("vlnv",
         help="Specifies the identifier of the core to query")
     files_cmd.set_defaults(func=cmd_files)
+    
+    filespec_cmd = subparser.add_parser("filespec",
+        help="Extracts files based on a filespec and writes to a file")
+    filespec_cmd.add_argument("-o", "--output",
+        help="Specifies the output file")
+    filespec_cmd.add_argument("-l", "--library-path",
+        dest="library_path", action="append",
+        help="Specifies a library path")
+    filespec_cmd.add_argument("-t", "--template",
+        help="Specifies the template to use for output")
+    filespec_cmd.add_argument("filespec", help="Specifies YAML filespec")
+    filespec_cmd.set_defaults(func=cmd_filespec)
     
     mkfile_cmd = subparser.add_parser("mkfile",
         help="Returns the path to dv.mk")

@@ -6,6 +6,8 @@ package:
   dev-deps:
     - name: colorama
       src: pypi
+    - name: jinja2
+      src: pypi
     - name: pyyaml
       src: pypi
     - name: allure-python-commons

@@ -55,84 +55,27 @@ def cmd_files(args):
     if hasattr(args, "target") and args.target is not None:
         top_flags["target"] = args.target
         
-    sys.stderr.write("args.vlnv=%s\n" % str(args.vlnv))
+    # Use detailed arguments
+    core_deps = cm.get_depends(Vlnv(args.vlnv), flags=top_flags)
         
-    if os.path.isfile(args.vlnv):
-        filespec = args.vlnv
-    else:
-        filespec = None
-        
-    if filespec is not None:
-        # 
-        with open(filespec, "r") as fp:
-            filespec = yaml.load(fp, Loader=yaml.loader.FullLoader)
-
-        if "filespec" not in filespec.keys():
-            raise Exception("YAML filespec does not contain 'filespec'")
-        
-        fs = filespec["filespec"]
-        
-        for v in fs:
-                    
-            core_deps = cm.get_depends(Vlnv(v["vlnv"]), flags=top_flags)
-        
-            out =  v["out"]
-        
-            for e in out:
-                path = e["path"]
-        
-                flags = {}
-                file_type = set()
+    flags = {}
+    
+    for f in args.flags:
+        subflags = f.split(',')
+        for sf in subflags:
+            flags[sf] = True
             
-                t = e["type"]
-                if isinstance(t, list):
-                    for ti in t:
-                        file_type.add(ti)
-                else:
-                    file_type.add(t)
-                    
-                if "flags" in e.keys():
-                    f = e["flags"]
-                    
-                    if isinstance(f, list):
-                        for fi in f:
-                            flags[fi] = True
-                    else:
-                        flags[f] = True
+    file_type = None
+    
+    if args.file_type is not None:
+        file_type = set()
+        
+        for t in args.file_type:
+            subtypes = t.split(',')
+            for st in subtypes:
+                file_type.add(st)
                 
-                if "include" in e.keys():
-                    include = e["include"]
-                elif args.include is not None:
-                    include = args.include
-                else:
-                    include = False
-                    
-#                print("file_type: %s ; include=%s" % (str(file_type), str(include)))
-
-                with open(path, "w") as fp:                
-                    _extract_files(fp, core_deps, file_type, flags, include)
-    else:
-        # Use detailed arguments
-        core_deps = cm.get_depends(Vlnv(args.vlnv), flags=top_flags)
-        
-        flags = {}
-        
-        for f in args.flags:
-            subflags = f.split(',')
-            for sf in subflags:
-                flags[sf] = True
-                
-        file_type = None
-        
-        if args.file_type is not None:
-            file_type = set()
-            
-            for t in args.file_type:
-                subtypes = t.split(',')
-                for st in subtypes:
-                    file_type.add(st)
-                    
-        _extract_files(sys.stdout, core_deps, file_type, flags, args.include)
+    _extract_files(sys.stdout, core_deps, file_type, flags, args.include)
         
 def _extract_files(out, core_deps, file_type, flags, include):
     files = []
