@@ -59,11 +59,12 @@ def cmd_files(args):
     core_deps = cm.get_depends(Vlnv(args.vlnv), flags=top_flags)
         
     flags = {}
-    
-    for f in args.flags:
-        subflags = f.split(',')
-        for sf in subflags:
-            flags[sf] = True
+
+    if hasattr(args, "flags") and args.flags is not None:
+        for f in args.flags:
+            subflags = f.split(',')
+            for sf in subflags:
+                flags[sf] = True
             
     file_type = None
     

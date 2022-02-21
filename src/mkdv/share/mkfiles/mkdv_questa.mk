@@ -39,9 +39,9 @@ endif
 BUILD_QUESTA_DEPS += $(MKDV_BUILD_DEPS)
 BUILD_QUESTA_DEPS += questa-vopt
 
-ifneq (,$(MKDV_VL_SRCS))
-QUESTA_VOPT_DEPS += build-questa-vl.d
-endif
+#ifneq (,$(MKDV_VL_SRCS))
+#QUESTA_VOPT_DEPS += build-questa-vl.d
+#endif
 
 ifneq (,$(MKDV_VH_LIBS))
 QUESTA_VOPT_DEPS += build-questa-vh.d
@@ -59,7 +59,13 @@ endif
 $(MKDV_CACHEDIR)/work : 
 	vlib work
 	
-questa-vopt : $(QUESTA_VOPT_DEPS)
+questa-vopt : $(QUESTA_VOPT_DEPS) $(MKDV_VL_SRCS)
+	@echo "MKDV_VL_SRCS: $(MKDV_VL_SRCS)"
+#	@if test "x$(MKDV_VL_SRCS)" != "x"; then 
+ifneq (,$(MKDV_VL_SRCS))
+	vlib work
+	vlog $(VLOG_OPTIONS) $(MKDV_VL_SRCS) || (rm -rf work ; exit 1)
+endif
 	vopt -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
 	
 build-questa-vh.d : $(foreach l,$(MKDV_VH_LIBS),build-questa-vh-$(l).d)
