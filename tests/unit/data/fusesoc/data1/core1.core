@@ -1,0 +1,47 @@
+CAPI=2:
+name: data1::core1:1.0.0
+description: core1
+
+filesets:
+
+  zephyr:
+    files:
+      - z1
+    file_type: zephyrModulePath
+    depend:
+      - data1::core2
+    
+  pss:
+    files:
+      - pss/core1.pss
+    file_type: pssSource
+    depend:
+      - data1::core2
+    
+  testplan:
+    files:
+      - tp/bring_up_tests.yaml
+    file_type: testPlanYaml
+    depend:
+      - data1::core2
+    
+targets:
+  
+  pss:
+    description: PSS files and configuration
+    filesets:
+      - pss
+      - testplan
+    toplevel: my_c
+    parameters:
+      - dev-id=foo
+    
+  zephyr:
+    description: Zephyr configuration
+    filesets:
+      - zephyr
+      
+
+
+      
+    

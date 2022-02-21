@@ -27,10 +27,13 @@ setup(
     'wheel',
   ],
   install_requires=[
-    'colorama',
     'allure-python-commons',
+    'colorama',
+    'fusesoc',
+    'jsonschema',
     'markdown',
-    'pyyaml'
+    'pyyaml',
+    'toposort'
   ],
 )
 

@@ -39,9 +39,9 @@ endif
 BUILD_QUESTA_DEPS += $(MKDV_BUILD_DEPS)
 BUILD_QUESTA_DEPS += questa-vopt
 
-ifneq (,$(MKDV_VL_SRCS))
-QUESTA_VOPT_DEPS += build-questa-vl.d
-endif
+#ifneq (,$(MKDV_VL_SRCS))
+#QUESTA_VOPT_DEPS += build-questa-vl.d
+#endif
 
 ifneq (,$(MKDV_VH_LIBS))
 QUESTA_VOPT_DEPS += build-questa-vh.d
@@ -59,7 +59,13 @@ endif
 $(MKDV_CACHEDIR)/work : 
 	vlib work
 	
-questa-vopt : $(QUESTA_VOPT_DEPS)
+questa-vopt : $(QUESTA_VOPT_DEPS) $(MKDV_VL_SRCS)
+	@echo "MKDV_VL_SRCS: $(MKDV_VL_SRCS)"
+#	@if test "x$(MKDV_VL_SRCS)" != "x"; then 
+ifneq (,$(MKDV_VL_SRCS))
+	vlib work
+	vlog $(VLOG_OPTIONS) $(MKDV_VL_SRCS) || (rm -rf work ; exit 1)
+endif
 	vopt -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
 	
 build-questa-vh.d : $(foreach l,$(MKDV_VH_LIBS),build-questa-vh-$(l).d)
@@ -88,20 +94,34 @@ endif
 #	vopt -o $(TOP_MODULE)_opt $(TOP_MODULE) +designfile -debug
 	touch $@
 	
+ifeq (1,$(MKDV_GDB))
+  WHICH_VSIM:=$(shell which vsim)
+  QUESTA_BINDIR:=$(dir $(WHICH_VSIM))
 
+  ifeq ("bin", $(notdir $(QUESTA_BINDIR)))
+    QUESTA_ROOT := $(abspath $(QUESTA_BINDIR)/../..)
+  else
+    QUESTA_ROOT := $(abspath $(QUESTA_BINDIR)/..)
+  endif
+
+  VSIMK:=$(QUESTA_ROOT)/linux_x86_64/vsimk
+endif
+
+ifeq (1,$(COVERAGE_SAVE))
+  BATCH_CMD += coverage save -onexit cov.ucdb;
+endif
+BATCH_CMD += run $(MKDV_TIMEOUT);
+BATCH_CMD += quit -f;
 
 
 run-questa : $(MKDV_RUN_DEPS)
 	vmap work $(MKDV_CACHEDIR)/work
-ifneq (1,$(MKDV_GDB))
-	vsim -batch -do "run $(MKDV_TIMEOUT); quit -f" \
+ifeq (1,$(MKDV_GDB))
+	gdb --args $(VSIMK) -batch -do "$(BATCH_CMD)" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
 		$(MKDV_RUN_ARGS)
-else # MKDV_GDB
-	which_vsim=`which vsim`; \
-	vsim_bindir=`dirname $$which_vsim`; \
-	gdb --args $$vsim_bindir/../linux_x86_64/vsimk \
-		-batch -do "run $(MKDV_TIMEOUT); quit -f" \
+else
+	vsim -batch -do "$(BATCH_CMD)" \
 		$(VSIM_OPTIONS) $(TOP_MODULE)_opt \
 		$(MKDV_RUN_ARGS)
 endif
