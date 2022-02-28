@@ -70,6 +70,8 @@ def get_parser():
     
     filespec_cmd = subparser.add_parser("filespec",
         help="Extracts files based on a filespec and writes to a file")
+    filespec_cmd.add_argument("-d", "--debug",
+        action="store_true", help="Enables debug")
     filespec_cmd.add_argument("-o", "--output",
         help="Specifies the output file")
     filespec_cmd.add_argument("-l", "--library-path",

@@ -47,8 +47,9 @@ class _TemplateLoader(jinja2.BaseLoader):
 def cmd_filespec(args):
     cfg_file = _ConfigFile("")
     cfg = Config(file=cfg_file)
-    
-#    logging.basicConfig(level=logging.DEBUG)
+
+    if args.debug:
+        logging.basicConfig(level=logging.DEBUG)
     
     cm = CoreManager(cfg)
     
@@ -100,12 +101,23 @@ def cmd_filespec(args):
     fs = filespec["filespec"]
     
     for v in fs:
-                
-        core_deps = cm.get_depends(Vlnv(v["vlnv"]), flags=top_flags)
     
         out =  v["out"]
     
         for e in out:
+            top_flags = {"is_toplevel": True}
+            
+            if "flags" in e.keys():
+                f = e["flags"]
+                    
+                if isinstance(f, list):
+                    for fi in f:
+                        top_flags[fi] = True
+                else:
+                    top_flags[f] = True
+                    
+            core_deps = cm.get_depends(Vlnv(v["vlnv"]), flags=top_flags)
+                    
             name = e["name"]
     
             flags = {}
@@ -126,7 +138,7 @@ def cmd_filespec(args):
                         flags[fi] = True
                 else:
                     flags[f] = True
-            
+
             if "include" in e.keys():
                 include = e["include"]
             else:
