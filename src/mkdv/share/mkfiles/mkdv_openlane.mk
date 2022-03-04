@@ -65,7 +65,7 @@ MKDV_POST_RUN_TARGETS += openlane-copy-results
 else # Rules
 
 
-build-openlane :
+build-openlane : $(MKDV_BUILD_DEPS)
 
 
 $(MKDV_RUNDIR)/$(TOP_MODULE)/config.tcl : $(dir $(MKDV_MK))/config.tcl
