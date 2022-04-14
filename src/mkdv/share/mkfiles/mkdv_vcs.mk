@@ -1,69 +1,80 @@
 #****************************************************************************
-#* vcs.mk
+#* mkdv_vcs.mk
 #*
-#* Simulator support for Synopsys VCS
+#* Simulator support for VCS
 #*
-#* SRCS           - List of source files
-#* INCDIRS        - Include paths
-#* DEFINES        - Defines
-#* TOP_MODULE     - Top module to load
+#* MKDV_VL_INCDIRS        - Include paths
+#* MKDV_VL_DEFINES        - MKDV_VL_DEFINES
+#* PYBFMS_MODULES - Modules to query for BFMs
 #* SIM_ARGS       - generic simulation arguments
-#* VCS_SIM_ARGS   - VCS-specific simulation arguments
+#* VLSIM_SIM_ARGS - vlsim-specific simulation arguments
+#* VLSIM_CLKSPEC  - clock-generation options for VLSIM
 #* VPI_LIBS       - List of PLI libraries
 #* DPI_LIBS       - List of DPI libraries
-#* TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
+#* MKDV_TIMEOUT        - Simulation timeout, in units of ns,us,ms,s
 #****************************************************************************
-MKDV_AVAIABLE_TOOLS += vcs
+
+ifneq (1,$(RULES))
+MKDV_AVAILABLE_TOOLS += vcs
+endif
 
 ifeq (vcs,$(MKDV_TOOL))
 
 ifneq (1,$(RULES))
-COMMON_DIR := $(abspath $(dir $(lastword $(MAKEFILE_LIST))))
-PACKAGES_DIR := $(abspath $(COMMON_DIR)/../../packages)
-PYBFMS_DPI_LIB := $(shell $(PACKAGES_DIR)/python/bin/pybfms lib)
-COCOTB_PREFIX := $(shell $(PACKAGES_DIR)/python/bin/cocotb-config --prefix)
-VCS?=vcs
 
-IFC?=vpi
+MKDV_VL_DEFINES += HAVE_BIND HAVE_HDL_CLOCKGEN
+VCS ?= vcs
 
-ifeq (dpi,$(IFC))
-#DPI_LIBS += $(subst .so,,$(PYBFMS_DPI_LIB))
-DPI_LIBS += $(PYBFMS_DPI_LIB)
+ifeq (1,$(MKDV_DEBUG))
+#VCS_COMPILE_ARGS += +debug=acc
+SIMV = simv.debug
 else
-VPI_LIBS += $(PYBFMS_DPI_LIB)
+SIMV = simv.ndebug
 endif
 
-VPI_LIBS += $(COCOTB_PREFIX)/cocotb/libs/libcocotbvpi_vcs.so
+SIMV = simv
 
-DEFINES += HAVE_HDL_CLOCKGEN
-
-VCS_OPTIONS += -full64 +vpi -debug +acc+1 -P pli.tab
-VCS_OPTIONS += $(foreach inc,$(INCDIRS),+incdir+$(inc))
-VCS_OPTIONS += $(foreach def,$(DEFINES),+define+$(def))
-VCS_OPTIONS += $(foreach vpi,$(VPI_LIBS),-load $(vpi))
-#SIMV_OPTIONS += $(foreach vpi,$(VPI_LIBS),-load $(vpi))
-#VCS_OPTIONS += $(foreach dpi,$(DPI_LIBS),-L$(dir $(dpi)) -l $(notdir $(dpi)))
-VCS_OPTIONS += $(foreach dpi,$(DPI_LIBS),$(dpi))
-
-
-ifeq (dpi,$(IFC))
-SRCS += pybfms_gen.sv pybfms_gen.c
-SIMV_OPTIONS += -dpioutoftheblue 1
-else
-SRCS += pybfms_gen.v
+ifeq (1,$(MKDV_VALGRIND))
+  SIMV_PREFIX=valgrind --tool=memcheck 
 endif
-#SRCS += pybfms_gen.v
+
+ifeq (1,$(MKDV_GDB))
+  VLSIM_PREFIX=gdb --args 
+endif
+
+# Enable VPI for Verilator
+#VLSIM_OPTIONS += --vpi
+#VLSIM_OPTIONS += --top-module $(TOP_MODULE)
+
+VCS_OPTIONS += $(foreach inc,$(MKDV_VL_INCDIRS),+incdir+$(inc))
+VCS_OPTIONS += $(foreach dir,$(sort $(dir $(MKDV_VL_SRCS))),+incdir+$(dir))
+VCS_OPTIONS += $(foreach def,$(MKDV_VL_DEFINES),+define+$(def))
+#SIMV_ARGS += $(foreach vpi,$(VPI_LIBS),+vpi=$(vpi))
+#SIMV_ARGS += +vlsim.timeout=$(MKDV_TIMEOUT)
+SIMV_ARGS += $(MKDV_RUN_ARGS)
+
+# Always build both images
+MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.debug
+#MKDV_BUILD_DEPS += $(MKDV_CACHEDIR)/simv.ndebug
+
+ifneq (,$(DPI_LIBS))
+export LD_LIBRARY_PATH:=$(subst $(eval) ,:,$(sort $(dir $(DPI_LIBS)))):$(LD_LIBRARY_PATH)
+endif
 
 else # Rules
 
-build-vcs : $(SRCS)
-	echo "acc+=rw,wn:*" > pli.tab
-	$(VCS) -sverilog $(VCS_OPTIONS) $(SRCS)
+build-vcs : $(MKDV_BUILD_DEPS)
 
+$(MKDV_CACHEDIR)/simv : $(MKDV_VL_SRCS) $(MKDV_DPI_SRCS)
+	cd $(MKDV_CACHEDIR) ; $(VCS) \
+		$(VCS_OPTIONS) $(vCS_DEBUG_OPTIONS) $(MKDV_VL_SRCS) \
+		$(MKDV_DPI_SRCS) $(foreach l,$(DPI_LIBS),$(l))
 
-run : build
-	./simv $(SIMV_OPTIONS)
+run-vcs : $(MKDV_RUN_DEPS)
+	echo "LD_LIBRARY_PATH=$(LD_LIBRARY_PATH)"
+	$(VCS_PREFIX) $(MKDV_CACHEDIR)/$(SIMV) $(SIMV_ARGS)
+	
 
 endif
 
-endif
+endif # MKDV_TOOL == vcs

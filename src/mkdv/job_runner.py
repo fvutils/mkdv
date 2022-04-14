@@ -69,7 +69,7 @@ class JobRunner(object):
 
             # Launch new jobs while there is quota 
             # and            
-            while len(active_procs) < avail_jobs and selector.avail():
+            while (avail_jobs == -1 or len(active_procs) < avail_jobs) and selector.avail():
                 # TODO: could randomize selection
                 spec = selector.next()
 
