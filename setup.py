@@ -32,6 +32,7 @@ setup(
     'fusesoc',
     'jsonschema',
     'markdown',
+    'pypyr>=5.3.0',
     'pyyaml',
     'toposort'
   ],
