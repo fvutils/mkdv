@@ -23,7 +23,14 @@ def run_step(context : Context):
     print("cmd_l=%s" % str(cmd_l))
 
     cmd = [sys.executable, '-m']
-    cmd.extend(cmd_l)
+    
+    for a in cmd_l:
+        if a[0] == '"':
+            cmd.append(a[1:len(a)-1])
+        else:
+            cmd.append(a)
+            
+    print("cmd=%s" % str(cmd))
     
     if "out" in context.keys():
         try:
@@ -35,11 +42,14 @@ def run_step(context : Context):
         context[context["out"]] = out.decode().strip()
     else:
         try:
-            subprocess.run(
+            res = subprocess.run(
                 cmd,
                 stdout=sys.stdout,
                 stderr=sys.stderr)
         except Exception as e:
             raise e
+        
+        if res.returncode != 0:
+            raise Exception("Run failed")
 
     pass

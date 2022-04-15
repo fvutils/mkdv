@@ -37,7 +37,7 @@ def run_step(context: Context) -> None:
         try:
             ctxt = pipelinerunner.run(
                 pipeline_name=context.current_pipeline.name,
-                groups=['setup'],
+                groups=['setup', 'run'],
                 dict_in=context,
                 py_dir=context.current_pipeline.py_dir)
         except Exception as e:
