@@ -17,7 +17,9 @@
         <script src="_static/doctools.js"></script>
     <script src="_static/js/theme.js"></script>
     <link rel="index" title="Index" href="genindex.html" />
-    <link rel="search" title="Search" href="search.html" /> 
+    <link rel="search" title="Search" href="search.html" />
+    <link rel="next" title="MKDV Reference" href="reference.html" />
+    <link rel="prev" title="Welcome to MKDV’s documentation!" href="index.html" /> 
 </head>
 
 <body class="wy-body-for-nav"> 
@@ -35,27 +37,27 @@
   </form>
 </div>
         </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
-              <!-- Local TOC -->
-              <div class="local-toc"><ul>
-<li><a class="reference internal" href="#">Introduction</a><ul>
-<li><a class="reference internal" href="#what-is-mkdv">What is MKDV?</a></li>
-<li><a class="reference internal" href="#key-features">Key Features</a><ul>
-<li><a class="reference internal" href="#tools-and-methodologies">Tools and Methodologies</a><ul>
-<li><a class="reference internal" href="#hdl-simulators">HDL Simulators</a></li>
-<li><a class="reference internal" href="#synthesis-tools">Synthesis Tools</a></li>
-<li><a class="reference internal" href="#asic-flows">ASIC Flows</a></li>
-<li><a class="reference internal" href="#methodologies">Methodologies</a></li>
+              <p class="caption" role="heading"><span class="caption-text">Contents:</span></p>
+<ul class="current">
+<li class="toctree-l1 current"><a class="current reference internal" href="#">Introduction</a><ul>
+<li class="toctree-l2"><a class="reference internal" href="#what-is-mkdv">What is MKDV?</a></li>
+<li class="toctree-l2"><a class="reference internal" href="#key-features">Key Features</a><ul>
+<li class="toctree-l3"><a class="reference internal" href="#tools-and-methodologies">Tools and Methodologies</a><ul>
+<li class="toctree-l4"><a class="reference internal" href="#hdl-simulators">HDL Simulators</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#synthesis-tools">Synthesis Tools</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#asic-flows">ASIC Flows</a></li>
+<li class="toctree-l4"><a class="reference internal" href="#methodologies">Methodologies</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#parallel-execution">Parallel execution</a></li>
-<li><a class="reference internal" href="#results-viewing">Results viewing</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#contributors">Contributors</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#parallel-execution">Parallel execution</a></li>
+<li class="toctree-l3"><a class="reference internal" href="#results-viewing">Results viewing</a></li>
 </ul>
 </li>
 </ul>
-</div>
+</li>
+<li class="toctree-l1"><a class="reference internal" href="reference.html">MKDV Reference</a></li>
+</ul>
+
         </div>
       </div>
     </nav>
@@ -88,9 +90,27 @@
 in Design and Verification (DV) workflows. While MKDV can be
 used to run other types of jobs, such as tests in a regression
 suite for a software tool, its primary focus is on DV flows.</p>
-<p>As its name suggests, MKDV leverages Makefiles for specifying
-lowest-level flow commands. MKDV’s upper-level infrastructure
-is written in Python.</p>
+<p>As its name suggests, MKDV historically leveraged Makefiles for
+specifying the lowest level of flow commands. MKDV now recommends
+using the Python-based <a class="reference external" href="https://pypyr.io/">PyPyr</a> pipeline
+description format to specify job build/run steps.</p>
+<p>Most DV flows involve a single set of design files and test
+infrastructure files (testbench and tests) that are built once
+and run in multiple ways. Specifically, each run executes a
+different test or a test configured differently.</p>
+<p>MKDV is optimized for this build-once run-many methodology. It
+recognizes the job runs that have common build settings and
+performs a single setup (build) step for each unique build
+configuration.</p>
+<p>MKDV defines a hierarchical YAML data format for capturing
+job meta-data. This meta-data captures key settings about
+how to run tests (eg +UVM_TESTNAME to pass), as well as
+an optional description of the test.</p>
+<p>MKDV supports running jobs via several backend
+job-management schemes:
+- Multi-process parallel runs on the same server
+- SLURM
+- LSF</p>
 </section>
 <section id="key-features">
 <h2>Key Features<a class="headerlink" href="#key-features" title="Permalink to this headline"></a></h2>
@@ -103,6 +123,8 @@ is written in Python.</p>
 <li><p>Siemens Questa</p></li>
 <li><p>Icarus Verilog</p></li>
 <li><p>Verilator</p></li>
+<li><p>Synopsys VCS</p></li>
+<li><p>Cadence Xcelium</p></li>
 </ul>
 </section>
 <section id="synthesis-tools">
@@ -147,15 +169,15 @@ reporting framework, enabling regression results to be easily viewed.</p>
 </figure>
 </section>
 </section>
-<section id="contributors">
-<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline"></a></h2>
-</section>
 </section>
 
 
            </div>
           </div>
-          <footer>
+          <footer><div class="rst-footer-buttons" role="navigation" aria-label="Footer">
+        <a href="index.html" class="btn btn-neutral float-left" title="Welcome to MKDV’s documentation!" accesskey="p" rel="prev"><span class="fa fa-arrow-circle-left" aria-hidden="true"></span> Previous</a>
+        <a href="reference.html" class="btn btn-neutral float-right" title="MKDV Reference" accesskey="n" rel="next">Next <span class="fa fa-arrow-circle-right" aria-hidden="true"></span></a>
+    </div>
 
   <hr/>
 
