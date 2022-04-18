@@ -1,0 +1,183 @@
+<!DOCTYPE html>
+<html class="writer-html5" lang="en" >
+<head>
+  <meta charset="utf-8" /><meta name="generator" content="Docutils 0.17.1: http://docutils.sourceforge.net/" />
+
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Introduction &mdash; MKDV  documentation</title>
+      <link rel="stylesheet" href="_static/pygments.css" type="text/css" />
+      <link rel="stylesheet" href="_static/css/theme.css" type="text/css" />
+  <!--[if lt IE 9]>
+    <script src="_static/js/html5shiv.min.js"></script>
+  <![endif]-->
+  
+        <script data-url_root="./" id="documentation_options" src="_static/documentation_options.js"></script>
+        <script src="_static/jquery.js"></script>
+        <script src="_static/underscore.js"></script>
+        <script src="_static/doctools.js"></script>
+    <script src="_static/js/theme.js"></script>
+    <link rel="index" title="Index" href="genindex.html" />
+    <link rel="search" title="Search" href="search.html" /> 
+</head>
+
+<body class="wy-body-for-nav"> 
+  <div class="wy-grid-for-nav">
+    <nav data-toggle="wy-nav-shift" class="wy-nav-side">
+      <div class="wy-side-scroll">
+        <div class="wy-side-nav-search" >
+            <a href="index.html" class="icon icon-home"> MKDV
+          </a>
+<div role="search">
+  <form id="rtd-search-form" class="wy-form" action="search.html" method="get">
+    <input type="text" name="q" placeholder="Search docs" />
+    <input type="hidden" name="check_keywords" value="yes" />
+    <input type="hidden" name="area" value="default" />
+  </form>
+</div>
+        </div><div class="wy-menu wy-menu-vertical" data-spy="affix" role="navigation" aria-label="Navigation menu">
+              <!-- Local TOC -->
+              <div class="local-toc"><ul>
+<li><a class="reference internal" href="#">Introduction</a><ul>
+<li><a class="reference internal" href="#what-is-mkdv">What is MKDV?</a></li>
+<li><a class="reference internal" href="#key-features">Key Features</a><ul>
+<li><a class="reference internal" href="#tools-and-methodologies">Tools and Methodologies</a><ul>
+<li><a class="reference internal" href="#hdl-simulators">HDL Simulators</a></li>
+<li><a class="reference internal" href="#synthesis-tools">Synthesis Tools</a></li>
+<li><a class="reference internal" href="#asic-flows">ASIC Flows</a></li>
+<li><a class="reference internal" href="#methodologies">Methodologies</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#parallel-execution">Parallel execution</a></li>
+<li><a class="reference internal" href="#results-viewing">Results viewing</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#contributors">Contributors</a></li>
+</ul>
+</li>
+</ul>
+</div>
+        </div>
+      </div>
+    </nav>
+
+    <section data-toggle="wy-nav-shift" class="wy-nav-content-wrap"><nav class="wy-nav-top" aria-label="Mobile navigation menu" >
+          <i data-toggle="wy-nav-top" class="fa fa-bars"></i>
+          <a href="index.html">MKDV</a>
+      </nav>
+
+      <div class="wy-nav-content">
+        <div class="rst-content">
+          <div role="navigation" aria-label="Page navigation">
+  <ul class="wy-breadcrumbs">
+      <li><a href="index.html" class="icon icon-home"></a> &raquo;</li>
+      <li>Introduction</li>
+      <li class="wy-breadcrumbs-aside">
+            <a href="_sources/introduction.rst.txt" rel="nofollow"> View page source</a>
+      </li>
+  </ul>
+  <hr/>
+</div>
+          <div role="main" class="document" itemscope="itemscope" itemtype="http://schema.org/Article">
+           <div itemprop="articleBody">
+             
+  <section id="introduction">
+<h1>Introduction<a class="headerlink" href="#introduction" title="Permalink to this headline"></a></h1>
+<section id="what-is-mkdv">
+<h2>What is MKDV?<a class="headerlink" href="#what-is-mkdv" title="Permalink to this headline"></a></h2>
+<p>MKDV is a framework for organizing, running, and reporting jobs
+in Design and Verification (DV) workflows. While MKDV can be
+used to run other types of jobs, such as tests in a regression
+suite for a software tool, its primary focus is on DV flows.</p>
+<p>As its name suggests, MKDV leverages Makefiles for specifying
+lowest-level flow commands. MKDV’s upper-level infrastructure
+is written in Python.</p>
+</section>
+<section id="key-features">
+<h2>Key Features<a class="headerlink" href="#key-features" title="Permalink to this headline"></a></h2>
+<section id="tools-and-methodologies">
+<h3>Tools and Methodologies<a class="headerlink" href="#tools-and-methodologies" title="Permalink to this headline"></a></h3>
+<p>MKDV provides out-of-box support for running the following tools:</p>
+<section id="hdl-simulators">
+<h4>HDL Simulators<a class="headerlink" href="#hdl-simulators" title="Permalink to this headline"></a></h4>
+<ul class="simple">
+<li><p>Siemens Questa</p></li>
+<li><p>Icarus Verilog</p></li>
+<li><p>Verilator</p></li>
+</ul>
+</section>
+<section id="synthesis-tools">
+<h4>Synthesis Tools<a class="headerlink" href="#synthesis-tools" title="Permalink to this headline"></a></h4>
+<ul class="simple">
+<li><p>Project Icestorm (targets iCE40 devices)</p></li>
+<li><p>Intel Quartus</p></li>
+</ul>
+</section>
+<section id="asic-flows">
+<h4>ASIC Flows<a class="headerlink" href="#asic-flows" title="Permalink to this headline"></a></h4>
+<ul class="simple">
+<li><p>OpenRoad Openlane</p></li>
+</ul>
+</section>
+<section id="methodologies">
+<h4>Methodologies<a class="headerlink" href="#methodologies" title="Permalink to this headline"></a></h4>
+<ul class="simple">
+<li><p>cocotb</p></li>
+<li><p>pybfms</p></li>
+</ul>
+<p>New tools and tool add-ons (plug-ins) are added using Makefile fragments.
+These can either be addded to the MKDV distribution or kept local to a
+site or project.</p>
+</section>
+</section>
+<section id="parallel-execution">
+<h3>Parallel execution<a class="headerlink" href="#parallel-execution" title="Permalink to this headline"></a></h3>
+<p>Currently, MKDV supports running parallel jobs on the local machine.
+In the future, support for external job managers (eg LSF, SLURM, etc)
+will be added.</p>
+</section>
+<section id="results-viewing">
+<h3>Results viewing<a class="headerlink" href="#results-viewing" title="Permalink to this headline"></a></h3>
+<p>MKDV is integrated with the <a class="reference external" href="https://docs.qameta.io/allure/">Allure</a>
+reporting framework, enabling regression results to be easily viewed.</p>
+<figure class="align-center" id="id1">
+<img alt="_images/Allure.PNG" src="_images/Allure.PNG" />
+<figcaption>
+<p><span class="caption-text">Regression result displayed with Allure.</span><a class="headerlink" href="#id1" title="Permalink to this image"></a></p>
+</figcaption>
+</figure>
+</section>
+</section>
+<section id="contributors">
+<h2>Contributors<a class="headerlink" href="#contributors" title="Permalink to this headline"></a></h2>
+</section>
+</section>
+
+
+           </div>
+          </div>
+          <footer>
+
+  <hr/>
+
+  <div role="contentinfo">
+    <p>&#169; Copyright 2022, Matthew Ballance.</p>
+  </div>
+
+  Built with <a href="https://www.sphinx-doc.org/">Sphinx</a> using a
+    <a href="https://github.com/readthedocs/sphinx_rtd_theme">theme</a>
+    provided by <a href="https://readthedocs.org">Read the Docs</a>.
+   
+
+</footer>
+        </div>
+      </div>
+    </section>
+  </div>
+  <script>
+      jQuery(function () {
+          SphinxRtdTheme.Navigation.enable(true);
+      });
+  </script> 
+
+</body>
+</html>
