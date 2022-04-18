@@ -5,7 +5,7 @@ from setuptools import setup, find_namespace_packages
 version="0.0.1"
 
 if "BUILD_NUM" in os.environ.keys():
-    version += "." + os.enviro["BUILD_NUM"]
+    version += "." + os.environ["BUILD_NUM"]
 
 setup(
   name="mkdv",
