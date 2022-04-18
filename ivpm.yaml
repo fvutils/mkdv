@@ -24,6 +24,8 @@ package:
       src: pypi
     - name: sphinx-rtd-theme
       src: pypi
+    - name: sphinx-jsonschema
+      src: pypi
     - name: cairosvg
       src: pypi
     - name: breathe

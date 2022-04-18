@@ -10,9 +10,31 @@ in Design and Verification (DV) workflows. While MKDV can be
 used to run other types of jobs, such as tests in a regression
 suite for a software tool, its primary focus is on DV flows.
 
-As its name suggests, MKDV leverages Makefiles for specifying
-lowest-level flow commands. MKDV's upper-level infrastructure
-is written in Python.
+As its name suggests, MKDV historically leveraged Makefiles for
+specifying the lowest level of flow commands. MKDV now recommends
+using the Python-based `PyPyr <https://pypyr.io/>`_ pipeline 
+description format to specify job build/run steps.
+
+Most DV flows involve a single set of design files and test
+infrastructure files (testbench and tests) that are built once 
+and run in multiple ways. Specifically, each run executes a 
+different test or a test configured differently.
+
+MKDV is optimized for this build-once run-many methodology. It
+recognizes the job runs that have common build settings and 
+performs a single setup (build) step for each unique build
+configuration. 
+
+MKDV defines a hierarchical YAML data format for capturing 
+job meta-data. This meta-data captures key settings about
+how to run tests (eg +UVM_TESTNAME to pass), as well as
+an optional description of the test.
+
+MKDV supports running jobs via several backend 
+job-management schemes:
+- Multi-process parallel runs on the same server
+- SLURM
+- LSF
 
 
 Key Features
@@ -28,6 +50,8 @@ HDL Simulators
 - Siemens Questa
 - Icarus Verilog
 - Verilator
+- Synopsys VCS
+- Cadence Xcelium
 
 Synthesis Tools
 ^^^^^^^^^^^^^^^
@@ -68,12 +92,4 @@ reporting framework, enabling regression results to be easily viewed.
 
         
 
-
-
-
-Contributors
-============
-
-.. spelling::
-   Ballance
 
