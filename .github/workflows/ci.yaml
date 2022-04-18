@@ -39,7 +39,7 @@ jobs:
         - name: Build Wheel
           run: |
             python3 -m venv python
-            ./python/bin/python3 -m pip install weel twine 
+            ./python/bin/python3 -m pip install wheel twine 
             ./python/bin/python3 -m pip install setuptools --upgrade
             export BUILD_NUM=$GITHUB_RUN_ID
             ./python/bin/python3 setup.py bdist_wheel --universal
