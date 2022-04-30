@@ -10,6 +10,7 @@ from fusesoc.config import Config
 from fusesoc.coremanager import CoreManager
 from fusesoc.librarymanager import Library
 from fusesoc.vlnv import Vlnv
+from mkdv.core_manager_w import CoreManagerW
 
 class _ConfigFile(object):
     """Dummy configuration file required by FuseSoC"""
@@ -32,7 +33,7 @@ class CoreDbMgr(object):
         cfg_file = _ConfigFile("")
         cfg = Config(file=cfg_file)
         
-        self.cm = CoreManager(cfg)
+        self.cm = CoreManagerW(cfg)
         
         packages_dir = get_packages_dir()
         project_dir = os.path.dirname(packages_dir)
