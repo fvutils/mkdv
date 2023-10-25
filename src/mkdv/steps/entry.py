@@ -31,6 +31,13 @@ def run_step(context: Context) -> None:
     context["MKDV_CACHEDIR"] = os.path.join(os.getcwd(), "cache")
     context["MKDV_RUNDIR"] = os.path.join(os.getcwd(), "rundir")
 
+    if "MKDV_RUN_ARGS" in context.keys():
+        args = context["MKDV_RUN_ARGS"]
+        if type(args) is str:
+            args_l = []
+            args_l.extend(args.split(" "))
+            context["MKDV_RUN_ARGS"] = args_l
+
     if depth == 0:
         depth += 1
         print("--> run")

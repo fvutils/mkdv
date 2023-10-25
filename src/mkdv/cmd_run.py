@@ -23,8 +23,8 @@ def cmd_run(args):
     
     cwd = os.getcwd()
     
-    if not os.path.exists(os.path.join(cwd, "mkdv.mk")):
-        raise Exception("mkdv.mk does not exist")
+    if not os.path.exists(os.path.join(cwd, "mkdv.yaml")):
+        raise Exception("mkdv.yaml does not exist")
 
     spec = None
         
@@ -35,8 +35,8 @@ def cmd_run(args):
         if not os.path.exists(specfile):
             raise Exception("Specfile " + specfile + " doesn't exist")
     else:
-        if os.path.exists(os.path.join(os.getcwd(), "mkdv.yaml")):
-            specfile = os.path.join(os.getcwd(), "mkdv.yaml")
+        if os.path.exists(os.path.join(os.getcwd(), "jobspec.mkdv")):
+            specfile = os.path.join(os.getcwd(), "jobspec.mkdv")
         else:
             raise Exception("Default specfile " + specfile + " doesn't exist")        
       

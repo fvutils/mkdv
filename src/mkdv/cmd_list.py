@@ -19,7 +19,7 @@ def cmd_list(args):
         if not os.path.exists(specfile):
             raise Exception("Specfile " + specfile + " doesn't exist")
     else:
-        specfile = os.path.join(os.getcwd(), "mkdv.yaml")
+        specfile = os.path.join(os.getcwd(), "jobspec.mkdv")
         
         if not os.path.exists(specfile):
             raise Exception("Default specfile " + specfile + " doesn't exist")

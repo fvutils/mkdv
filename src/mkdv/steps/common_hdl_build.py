@@ -30,7 +30,8 @@ def run_step(context : Context):
         'MKDV_VL_INCDIRS',
         'MKDV_VL_SRCS',
         'MKDV_VPI_LIBS',
-        'MKDV_DPI_LIBS']:
+        'MKDV_DPI_LIBS',
+        'MKDV_TOP_MODULE']:
         if key in context.keys():
             val = context[key]
             print("key=%s val=%s" % (key, str(val)))

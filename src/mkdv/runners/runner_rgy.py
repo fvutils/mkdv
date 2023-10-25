@@ -5,6 +5,7 @@ Created on Nov 16, 2021
 '''
 from mkdv.runners.runner_make import RunnerMake
 from mkdv.runners.runner_gtest import RunnerGtest
+from .runner_pypyr import RunnerPypyr
 
 class RunnerRgy(object):
     
@@ -26,6 +27,7 @@ class RunnerRgy(object):
             cls._inst = RunnerRgy()
             cls._inst.runner_m["makefile"] = RunnerMake()
             cls._inst.runner_m["gtest"] = RunnerGtest()
+            cls._inst.runner_m["pypyr"] = RunnerPypyr()
             
         return cls._inst
     

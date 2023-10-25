@@ -36,6 +36,8 @@ def main():
             print("Error: None returned as exit code", flush=True)
         sys.exit(code)
     except Exception as e:
+        print("Error: %s" % str(e))
+        raise e
         sys.exit(1)
     
 

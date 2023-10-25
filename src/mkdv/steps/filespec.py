@@ -31,13 +31,14 @@ def run_step(context : Context):
             raise KeyNotInContextError("Missing 'type'")
         name = e["name"]
 
-        file_types = set()        
+        file_types = set()
         for t in e["type"]:
             file_types.add(t.strip())
 
         flags = {}
         if "flags" in e.keys():
-            for f in e["flags"]:
+            for f in e["flags"].split(" "):
+                print("Flag: %s" % f)
                 flags[f] = True
                 
         is_include = False

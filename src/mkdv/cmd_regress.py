@@ -41,8 +41,8 @@ def cmd_regress(args):
         specfiles.extend(args.jobspecs)
         
     if len(specfiles) == 0:
-        if os.path.isfile(os.path.join(os.getcwd(), "mkdv.yaml")):
-            specfiles.append(os.path.join(os.getcwd(), "mkdv.yaml"))
+        if os.path.isfile(os.path.join(os.getcwd(), "jobspec.mkdv")):
+            specfiles.append(os.path.join(os.getcwd(), "jobspec.mkdv"))
         else:
             raise Exception("No specfiles specified")
         

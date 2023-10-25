@@ -5,6 +5,7 @@ Created on Apr 14, 2022
 '''
 
 import os
+import fusesoc
 from mkdv import get_packages_dir
 from fusesoc.config import Config
 from fusesoc.coremanager import CoreManager
@@ -31,13 +32,25 @@ class CoreDbMgr(object):
     
     def __init__(self):
         cfg_file = _ConfigFile("")
-        cfg = Config(file=cfg_file)
+        cfg = Config()
         
-        self.cm = CoreManagerW(cfg)
+        self.cm = CoreManager(cfg)
+
+        ignore_dirs = set()
+
+        # If we are using the source version of FuseSoC, exclude it
+        # from the search path
+        fusesoc_dir = os.path.dirname(os.path.abspath(fusesoc.__file__))
+        if os.path.basename(os.path.dirname(fusesoc_dir)) == "fusesoc":
+            ignore_dirs.add(os.path.dirname(fusesoc_dir))
         
         packages_dir = get_packages_dir()
+
+        if os.path.isdir(os.path.join(packages_dir, "zephyr")):
+            ignore_dirs.add(os.path.join(packages_dir, "zephyr"))
+
         project_dir = os.path.dirname(packages_dir)
-        self.cm.add_library(Library("project", project_dir))
+        self.cm.add_library(Library("project", project_dir), ignore_dirs)
         
     def get_depends(self, vlnv):
         top_flags = { "is_toplevel": True}
@@ -49,6 +62,7 @@ class CoreDbMgr(object):
     def collect_files(self, core_deps, file_types, flags, is_include):
         
         files = []
+        file_s = set()
 
         file_flags = { "is_toplevel": True}
         file_flags.update(flags)
@@ -56,11 +70,18 @@ class CoreDbMgr(object):
         for dep in core_deps:
             
             for f in dep.get_files(file_flags):
-                if file_types is None or f['file_type'] in file_types:
-                    t_is_include = 'include_path' in f.keys() and f['include_path']
-
-                    if t_is_include == is_include:
-                        files.append(os.path.join(dep.core_root, f['name']))
+                if is_include:
+                    if 'include_path' in f.keys():
+                        incdir = os.path.join(dep.core_root, f['include_path'])
+                    else:
+                        incdir = os.path.join(dep.core_root, os.path.dirname(f['name']))
+                    if not incdir in file_s:
+                        file_s.add(incdir)
+                        files.append(incdir)
+                elif 'is_include_file' not in f.keys() or not f['is_include_file']:
+                    if os.path.join(dep.core_root, f['name']) not in file_s:
+                        file_s.add(os.path.join(dep.core_root, f['name']))
+                        files.append(os.path.join(dep.core_root, f['name']))                    
                     
 
         return files

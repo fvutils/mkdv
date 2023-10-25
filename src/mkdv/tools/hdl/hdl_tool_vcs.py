@@ -1,17 +1,32 @@
-'''
-Created on Nov 16, 2021
-
-@author: mballance
-'''
-from mkdv.tools.hdl.hdl_tool import HdlTool
-from mkdv.tools.hdl.hdl_tool_config import HdlToolConfig
-from mkdv.tools.hdl.hdl_tool_mgr import HdlToolMgr
+#****************************************************************************
+#* hdl_tool_vcs.py
+#*
+#* Copyright 2022 Matthew Ballance and Contributors
+#*
+#* Licensed under the Apache License, Version 2.0 (the "License"); you may 
+#* not use this file except in compliance with the License.  
+#* You may obtain a copy of the License at:
+#*
+#*   http://www.apache.org/licenses/LICENSE-2.0
+#*
+#* Unless required by applicable law or agreed to in writing, software 
+#* distributed under the License is distributed on an "AS IS" BASIS, 
+#* WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.  
+#* See the License for the specific language governing permissions and 
+#* limitations under the License.
+#*
+#* Created on:
+#*     Author: 
+#*
+#****************************************************************************
+import os
 import subprocess
 import sys
-import os
+from .hdl_tool import HdlTool
+from .hdl_tool_mgr import HdlToolMgr
+from .hdl_tool_config import HdlToolConfig
 
-
-class HdlToolQuesta(HdlTool):
+class HdlToolVcs(HdlTool):
 
     def config(self, cfg : HdlToolConfig):
         cfg.preppend(HdlToolConfig.VL_DEFINES, "HAVE_HDL_CLOCKGEN")
@@ -113,4 +128,8 @@ class HdlToolQuesta(HdlTool):
             
         pass
 
-HdlToolMgr.inst().register_tool("mti", HdlToolQuesta)
+    def __init__(self):
+        pass
+
+
+HdlToolMgr.inst().register_tool("vcs", HdlToolVcs)
