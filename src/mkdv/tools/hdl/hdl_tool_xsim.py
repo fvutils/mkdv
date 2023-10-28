@@ -20,6 +20,7 @@
 #*
 #****************************************************************************
 import os
+import shutil
 import subprocess
 import sys
 from .hdl_tool import HdlTool
@@ -97,11 +98,14 @@ class HdlToolXsim(HdlTool):
         if not os.path.isdir(cfg.rundir):
             os.makedirs(cfg.rundir)
             
-        cmd = ["xsim", "--xsimdir", cfg.cachedir, "--runall"]
+        cmd = [
+            "xsim", 
+            "--xsimdir", os.path.join(cfg.cachedir, "xsim.dir"), 
+            "--runall"
+            ]
         for vpi in cfg.var_l(HdlToolConfig.VPI_LIBS):
             raise NotImplementedError("PLI library %s" % vpi)
 #            vsim_options.extend(["-pli", vpi])
-
 
         if cfg.var_b(HdlToolConfig.DEBUG):
             raise NotImplementedError("Debug")
@@ -114,7 +118,8 @@ class HdlToolXsim(HdlTool):
         for arg in cfg.var_l(HdlToolConfig.RUN_ARGS):
             if arg[0] == '+':
                 vsim_options.append("--testplusarg")
-                vsim_options.append(arg)
+                # XSIM doesn't want to actually see the plus in plusarg
+                vsim_options.append(arg[1:])
             else:
                 raise Exception("Non-plusarg simulation argument \"%s\" is not supported" % arg)
             
@@ -123,9 +128,20 @@ class HdlToolXsim(HdlTool):
         if len(top) == 0:
             raise Exception("No top module specified")
         
-        vsim_options.extend(top)
+        vsim_options.append('top.snap')
+        vsim_options.append("--ignore_coverage")
         
         cmd.extend(vsim_options)
+
+        print("COMMAND: %s" % str(cmd))
+
+        if os.path.exists(os.path.join(cfg.rundir, "xsim.dir")):
+            os.remove(os.path.join(cfg.rundir, "xsim.dir"))
+
+        os.symlink(
+            os.path.join(cfg.cachedir, "xsim.dir"),
+            os.path.join(cfg.rundir, "xsim.dir")
+        )
         
         res = subprocess.run(
             cmd,

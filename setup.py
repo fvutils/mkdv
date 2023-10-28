@@ -18,6 +18,9 @@ setup(
   author="Matthew Ballance",
   author_email="matt.ballance@gmail.com",
   description=("mkdv is a Makefile-based mechanism for running Design Verification tools with a Python regression runner"),
+  long_description="""
+  mkdv provides a job-running system customized for running Design Verification jobs
+  """,
   license="Apache 2.0",
   keywords = ["Python", "Functional Verification"],
   url = "https://github.com/fvutils/mkdv",
