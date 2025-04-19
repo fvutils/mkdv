@@ -1,54 +1,86 @@
-
 package:
-  name: mkdv
-  version: 0.0.1
+    name: mkdv
 
-  dev-deps:
-    - name: colorama
-      src: pypi
-    - name: jinja2
-      src: pypi
-    - name: pyyaml
-      src: pypi
-    - name: allure-python-commons
-      src: pypi
-    - name: markdown
-      src: pypi
-    - name: jsonschema
-      src: pypi
-    - name: toposort
-      src: pypi
-    - name: fusesoc
-      url: https://github.com/olofk/fusesoc.git
-    - name: Sphinx
-      src: pypi
-    - name: sphinx-rtd-theme
-      src: pypi
-    - name: sphinx-jsonschema
-      src: pypi
-    - name: cairosvg
-      src: pypi
-    - name: breathe
-      src: pypi
-    - name: funcparserlib
-      src: pypi
-      version: 1.0.0a0
-      #    - name: mistune
-      #      src: pypi
-      #      version: <2.0.0
-    - name: sphinxcontrib-makedomain
-      src: pypi
-    - name: sphinxcontrib-openapi
-      src: pypi
-    - name: sphinxcontrib-spelling
-      src: pypi
-      #    - name: sphinxcontrib-seqdiag
-      #      src: pypi
-      #      version: <3.0.0
-    - name: sphinx-issues
-      src: pypi
-    - name: sphinx-argparse
-      src: pypi
-    - name: pyenchant
-      src: pypi
+    dep-sets:
+    - name: default
+      deps: []
 
+    - name: default-dev
+      deps:
+      - name: colorama
+        type: python
+        src: pypi
+      - name: jinja2
+        type: python
+        src: pypi
+      - name: pyyaml
+        type: python
+        src: pypi
+      - name: allure-python-commons
+        type: python
+        src: pypi
+      - name: markdown
+        type: python
+        src: pypi
+      - name: jsonschema
+        type: python
+        src: pypi
+      - name: toposort
+        type: python
+        src: pypi
+      - name: fusesoc
+        url: https://github.com/olofk/fusesoc.git
+        type: python
+      - name: Sphinx
+        type: python
+        src: pypi
+      - name: sphinx-rtd-theme
+        type: python
+        src: pypi
+      - name: sphinx-jsonschema
+        type: python
+        src: pypi
+      - name: cairosvg
+        type: python
+        src: pypi
+      - name: breathe
+        type: python
+        src: pypi
+      - name: funcparserlib
+        type: python
+        src: pypi
+        version: 1.0.0a0
+#      - name: mistune
+#        type: python
+#        src: pypi
+#        version: <2.0.0
+      - name: sphinxcontrib-makedomain
+        type: python
+        src: pypi
+      - name: sphinxcontrib-openapi
+        type: python
+        src: pypi
+      - name: sphinxcontrib-spelling
+        type: python
+        src: pypi
+#      - name: sphinxcontrib-seqdiag
+#        type: python
+#        src: pypi
+#        version: <3.0.0
+      - name: sphinx-issues
+        type: python
+        src: pypi
+      - name: sphinx-argparse
+        type: python
+        src: pypi
+      - name: pyenchant
+        type: python
+        src: pypi
+
+    paths:
+      export:
+        lib-dirs:
+          - verilog/rtl
+      project:
+        lib-dirs:
+          - verilog/rtl
